@@ -63,12 +63,12 @@ export function mainKeyboard(lang: Lang | string | null = "fa") {
     // —— طوسی (بدون style = پیش‌فرض تلگرام) ——
     .text(btn(L, "BOOST"))
     .text(btn(L, "PROFILE"))
-    .text(btn(L, "DIAMONDS"))
+    .text(btn(L, "GUIDE"))
     .row()
     .text(btn(L, "EARN"), "primary")
-    .text(btn(L, "ANON_LINK"), "primary")
+    .text(btn(L, "DIAMONDS"))
     .row()
-    .text(btn(L, "GUIDE"))
+    .text(btn(L, "ANON_LINK"), "primary")
     .text(btn(L, "REFERRAL"))
     .resized();
 }
