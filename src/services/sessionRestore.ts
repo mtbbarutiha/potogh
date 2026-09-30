@@ -150,6 +150,9 @@ export async function restoreUserSession(
     return fresh;
   }
 
+  // پیام پین‌شده «شروع چت ناشناس» برای همه کاربران ثبت‌نام‌شده — فارغ از state
+  await sendPinnedQuickStart(ctx, lang);
+
   if (fresh.state === "chatting" && fresh.chatPartnerId != null) {
     if (fresh.pendingDirectTo) {
       await ctx.reply(
@@ -256,7 +259,6 @@ export async function restoreUserSession(
   await ctx.reply(t(lang, "welcome_back"), {
     reply_markup: mainKeyboard(lang),
   });
-  await sendPinnedQuickStart(ctx, lang);
   return fresh;
 }
 
@@ -277,10 +279,8 @@ export async function sendPinnedQuickStart(
         "👇",
       ].join("\n")
     : [
-        "🎲 آماده‌ای یکی جدید رو ببینی؟",
-        "",
-        "دکمه «🎲 شروع چت ناشناس» رو بزن، به یه ناشناس وصل شو،",
-        "راحت گپ بزن — و یک سکه رایگان هدیه بگیر 🎁",
+        "همین الان برای شروع چت به‌صورت ناشناس، دکمه «🎲 شروع چت ناشناس» رو بزن،",
+        "به یه ناشناس وصل شو، گپ بزن و یک سکه رایگان هدیه بگیر 🎁",
         "👇",
       ].join("\n");
   const kb = new InlineKeyboard().text(
