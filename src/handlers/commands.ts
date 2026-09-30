@@ -1,4 +1,4 @@
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer, InlineKeyboard, type Context } from "grammy";
 import { requireRegistered } from "../services/register.js";
 import {
   mainKeyboard,
@@ -6,7 +6,7 @@ import {
   coinsShopKeyboard,
   searchPanelKeyboard,
 } from "../keyboards/main.js";
-import { langOf, t, tr } from "../i18n/index.js";
+import { langOf, t, tr, btnAll } from "../i18n/index.js";
 import { sendProfileCard } from "../services/profile.js";
 import { promptQuickMatchGender } from "../services/match.js";
 import { patchUser, ensureUserCode } from "../db/users.js";
@@ -252,7 +252,8 @@ commandsHandler.command("voucher", async (ctx) => {
   );
 });
 
-commandsHandler.command("boost", async (ctx) => {
+/** اجرای شتاب‌دهی — از دستور /boost و دکمه منو */
+async function runBoost(ctx: Context) {
   const user = await requireRegistered(ctx);
   if (!user) return;
   const lang = langOf(user);
@@ -269,8 +270,8 @@ commandsHandler.command("boost", async (ctx) => {
   if (user.boostUntil && user.boostUntil > new Date()) {
     await ctx.reply(
       lang === "en"
-        ? `Boost active until ${user.boostUntil.toLocaleString(locale)}`
-        : `شتاب‌دهی فعال تا ${user.boostUntil.toLocaleString(locale)}`,
+        ? `⚡ Boost active until ${user.boostUntil.toLocaleString(locale)}`
+        : `⚡ شتاب‌دهی فعال تا ${user.boostUntil.toLocaleString(locale)}`,
     );
     return;
   }
@@ -298,7 +299,10 @@ commandsHandler.command("boost", async (ctx) => {
       cost: formatNum(BOOST_COST),
     }),
   );
-});
+}
+
+commandsHandler.command("boost", runBoost);
+commandsHandler.hears(btnAll("BOOST"), runBoost);
 
 commandsHandler.command("pro", async (ctx) => {
   const user = await requireRegistered(ctx);
