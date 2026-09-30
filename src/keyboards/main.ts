@@ -61,15 +61,15 @@ export function mainKeyboard(lang: Lang | string | null = "fa") {
     .text(btn(L, "SEARCH"), "success")
     .row()
     // —— طوسی (بدون style = پیش‌فرض تلگرام) ——
-    .text(btn(L, "EARN"))
+    .text(btn(L, "BOOST"))
     .text(btn(L, "PROFILE"))
     .text(btn(L, "DIAMONDS"))
     .row()
-    .text(btn(L, "REFERRAL"))
-    .text(btn(L, "GUIDE"))
-    .row()
+    .text(btn(L, "EARN"))
     .text(btn(L, "ANON_LINK"), "primary")
-    .text(btn(L, "BOOST"))
+    .row()
+    .text(btn(L, "GUIDE"))
+    .text(btn(L, "REFERRAL"))
     .resized();
 }
 
