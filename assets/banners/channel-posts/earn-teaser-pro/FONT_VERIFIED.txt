@@ -1,0 +1,6 @@
+VERIFIED 2026-09-02T21:42:57Z
+font=/agent/melogap-bot/assets/banners/channel-posts/earn-teaser-pro/fonts/Vazirmatn-Bold.ttf
+method=Pillow direction=rtl language=fa
+published=https://t.me/dordoriabot/218
+md5=906bfb79c97557309835c333e6c192a7
+

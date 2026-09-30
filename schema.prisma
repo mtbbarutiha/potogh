@@ -1,0 +1,426 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  telegramId        BigInt    @unique
+  username          String?
+  firstName         String?
+  displayName       String?
+  bio               String?
+  /// JSON آرایهٔ id علاقه‌مندی‌ها
+  interests         String?
+  /// JSON آرایهٔ id بخش‌های پروفایلی که جایزهٔ تکمیل گرفته‌اند
+  profileRewardedSections String?
+  diamonds          Int       @default(0)
+  /// چت امن فعال (عکس‌ها protect_content)
+  secureChat        Boolean   @default(false)
+  /// آیدی عمومی کوتاه برای لینک /user_XXXX (مثل پاتوق)
+  userCode          String?   @unique
+  referralCode      String    @unique
+  anonCode          String    @unique
+  referredById      Int?
+  referredBy        User?     @relation("Referrals", fields: [referredById], references: [id])
+  referrals         User[]    @relation("Referrals")
+  /// پاداش معرفی برای این کاربر به معرف پرداخت شده (ضد double-credit)
+  referralBonusGranted Boolean @default(false)
+  latitude          Float?
+  longitude         Float?
+  locationAt        DateTime?
+  gender            String?
+  lookingFor        String?
+  age               Int?
+  language          String?
+  country           String?
+  province          String?
+  city              String?
+  /// عکس تأییدشده (عمومی)
+  photoFileId       String?
+  /// عکس در انتظار تأیید ادمین
+  photoPendingFileId String?
+  /// none | pending | approved | rejected
+  photoStatus       String    @default("none")
+  /// احراز چهره
+  faceVerified      Boolean   @default(false)
+  /// ویدیو/ویدیونوت در انتظار بررسی
+  facePendingFileId String?
+  /// video_note | video
+  facePendingKind   String?
+  /// none | pending | approved | rejected
+  faceStatus        String    @default("none")
+  /// امتیاز احراز خودکار (۰–۱)
+  faceVerifyScore   Float?
+  /// manual | auto | hybrid
+  faceVerifyMethod  String?
+  faceVerifiedAt    DateTime?
+  registered        Boolean   @default(false)
+  /// حساب فعال برای اکسپلور/چت
+  isActive          Boolean   @default(true)
+  /// مسدود توسط ادمین — ربات برای این کاربر کار نمی‌کند
+  bannedAt          DateTime?
+  deletedAt         DateTime?
+  state             String    @default("language")
+  /// هدف پیام ناشناس (anonCode) — ادمین/ووچر هم از همین فیلد برای draft موقت استفاده می‌کنند
+  pendingAnonTo     String?
+  /// هدف نوشتن پیام دایرکت (id | reply:id | blast:token)
+  pendingDirectTo   String?
+  /// فروش سکه: تعداد سکه‌ای که منتظر شماره کارت است
+  pendingSellCard   String?
+  /// گزارش «دیگر موارد»: id کاربر هدف برای گرفتن توضیح متنی
+  pendingReportOther String?
+  chatPartnerId     Int?
+  boostUntil        DateTime?
+  /// تا این زمان درخواست چت دریافت نمی‌شود (سایلنت)
+  chatSilentUntil   DateTime?
+  isPro             Boolean   @default(false)
+  viewsCount        Int       @default(0)
+  likesCount        Int       @default(0)
+  chatsCount        Int       @default(0)
+  lastActiveAt      DateTime  @default(now())
+  /// آخرین دریافت سکه روزانه
+  lastDailyCoinAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  diamondOrders     DiamondOrder[]
+  anonInbox         AnonMessage[]  @relation("AnonTo")
+  anonSent          AnonMessage[]  @relation("AnonFrom")
+  exploreSeen       ExploreSeen[]  @relation("Viewer")
+  exploreShown      ExploreSeen[]  @relation("Shown")
+  likesGiven        Interaction[]  @relation("LikesGiven")
+  likesReceived     Interaction[]  @relation("LikesReceived")
+  contactsOwned     Contact[]      @relation("ContactsOwner")
+  contactsOf        Contact[]      @relation("ContactsTarget")
+  blocksGiven       UserBlock[]    @relation("BlocksGiven")
+  blocksReceived    UserBlock[]    @relation("BlocksReceived")
+  reportsGiven      UserReport[]   @relation("ReportsGiven")
+  reportsReceived   UserReport[]   @relation("ReportsReceived")
+  coinSellRequests  CoinSellRequest[]
+  chatEndWatchesAsWatcher ChatEndWatch[] @relation("ChatEndWatchers")
+  chatEndWatchesAsTarget  ChatEndWatch[] @relation("ChatEndTargets")
+  profileViewsAsViewer ProfileViewNotify[] @relation("ProfileViewViewers")
+  profileViewsAsViewee ProfileViewNotify[] @relation("ProfileViewViewees")
+  quickMatchChargesAsPayer   QuickMatchCharge[] @relation("QuickMatchPayers")
+  quickMatchChargesAsPartner QuickMatchCharge[] @relation("QuickMatchPartners")
+}
+
+/// بلاک کاربر — طرف بلاک‌شده در جستجو/چت/دایرکت دیده نمی‌شود
+model UserBlock {
+  id            Int      @id @default(autoincrement())
+  blockerUserId Int
+  blockedUserId Int
+  blocker       User     @relation("BlocksGiven", fields: [blockerUserId], references: [id])
+  blocked       User     @relation("BlocksReceived", fields: [blockedUserId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([blockerUserId, blockedUserId])
+  @@index([blockerUserId])
+  @@index([blockedUserId])
+}
+
+
+/// گزارش تخلف کاربر توسط کاربران دیگر
+model UserReport {
+  id              Int       @id @default(autoincrement())
+  reporterUserId  Int
+  reportedUserId  Int
+  /// ads | immoral | harassment | privacy | insult | wrong_gender | other
+  reason          String
+  /// متن آزاد برای «دیگر موارد» — فقط برای ادمین
+  details         String?
+  /// open | reviewed | dismissed
+  status          String    @default("open")
+  reporter        User      @relation("ReportsGiven", fields: [reporterUserId], references: [id])
+  reported        User      @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+  createdAt       DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewedNote    String?
+
+  @@index([status, createdAt])
+  @@index([reportedUserId])
+  @@index([reporterUserId])
+  @@index([createdAt])
+}
+
+/// مخاطبین ذخیره‌شده توسط کاربر
+model Contact {
+  id            Int      @id @default(autoincrement())
+  ownerUserId   Int
+  contactUserId Int
+  owner         User     @relation("ContactsOwner", fields: [ownerUserId], references: [id])
+  contact       User     @relation("ContactsTarget", fields: [contactUserId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([ownerUserId, contactUserId])
+  @@index([ownerUserId])
+  @@index([contactUserId])
+}
+
+/// آرشیو حساب‌های حذف‌شده — برای نمایش شناسه قدیمی به ادمین
+model DeletedAccount {
+  id              Int      @id @default(autoincrement())
+  originalUserId  Int
+  telegramId      BigInt
+  username        String?
+  displayName     String?
+  gender          String?
+  age             Int?
+  province        String?
+  city            String?
+  deletedAt       DateTime @default(now())
+  /// اگر بعداً دوباره ثبت‌نام کرد
+  reRegisteredUserId Int?
+
+  @@index([telegramId])
+  @@index([originalUserId])
+}
+
+model Interaction {
+  id        Int      @id @default(autoincrement())
+  /// like | view
+  type      String
+  fromUserId Int
+  toUserId   Int
+  fromUser  User     @relation("LikesGiven", fields: [fromUserId], references: [id])
+  toUser    User     @relation("LikesReceived", fields: [toUserId], references: [id])
+  createdAt DateTime @default(now())
+
+  /// لایک/بازدید: یک‌بار per pair (partial unique در migration)
+  /// نخ: چندبار مجاز — بدون unique
+  @@index([fromUserId, toUserId, type])
+  @@index([toUserId, type])
+  @@index([fromUserId, type])
+}
+
+model ExploreSeen {
+  id       Int  @id @default(autoincrement())
+  viewerId Int
+  shownId  Int
+  viewer   User @relation("Viewer", fields: [viewerId], references: [id])
+  shown    User @relation("Shown", fields: [shownId], references: [id])
+
+  @@unique([viewerId, shownId])
+}
+
+model DiamondOrder {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  packageId   String
+  diamonds    Int
+  amountToman Int
+  /// stars | card | gateway
+  paymentMethod String @default("card")
+  starsAmount   Int?
+  status      String   @default("pending")
+  paymentCode String   @unique
+  /// برای جلوگیری از شارژ دوباره Stars
+  telegramPaymentChargeId String? @unique
+  receiptFileId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, paymentMethod])
+  @@index([userId, status])
+}
+
+model AnonMessage {
+  id         Int      @id @default(autoincrement())
+  toUserId   Int
+  toUser     User     @relation("AnonTo", fields: [toUserId], references: [id])
+  fromUserId Int?
+  fromUser   User?    @relation("AnonFrom", fields: [fromUserId], references: [id])
+  text       String
+  createdAt  DateTime @default(now())
+}
+
+/// پیام دایرکت (با پیش‌نمایش، مشاهده و پاسخ)
+model DirectMessage {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  text       String
+  /// ویس تلگرام (اختیاری) — file_id
+  voiceFileId String?
+  /// draft | sent | read
+  status     String   @default("draft")
+  /// اگر پاسخ به پیام دیگری باشد
+  replyToId  Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([fromUserId, status])
+  @@index([toUserId, status])
+  @@index([replyToId])
+}
+
+/// درخواست چت — تا تایید طرف مقابل وصل نمی‌شود
+model ChatRequest {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  /// pending | accepted | rejected | cancelled | expired
+  status     String   @default("pending")
+  /// direct | quick
+  source     String   @default("direct")
+  /// انقضای خودکار (پیش‌فرض ۲ دقیقه)
+  expiresAt  DateTime?
+  /// پیام درخواست نزد گیرنده — برای برداشتن دکمه بعد از انقضا
+  toChatId   BigInt?
+  toMessageId Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+  @@index([status, expiresAt])
+}
+
+/// پیام‌های رله‌شده برای پاک‌سازی بعد از قطع چت
+model ChatMsgLog {
+  id             Int      @id @default(autoincrement())
+  ownerUserId    Int
+  partnerUserId  Int
+  telegramChatId BigInt
+  messageId      Int
+  createdAt      DateTime @default(now())
+
+  @@index([ownerUserId, partnerUserId])
+}
+
+/// آرشیو محتوای رله برای مانیتورینگ خاموش ادمین (پاک با پایان چت)
+model ChatRelayArchive {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  /// text | photo | voice | video | video_note | sticker | animation | audio | document
+  kind       String   @default("text")
+  textBody   String?
+  fileId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([fromUserId, toUserId, createdAt])
+  @@index([toUserId, fromUserId, createdAt])
+}
+
+/// وضعیت تحویل/خوانده‌شدن پیام‌های رله چت (تیک‌های واتس‌اپی)
+model ChatRelayStatus {
+  id              Int      @id @default(autoincrement())
+  senderUserId    Int
+  partnerUserId   Int
+  senderChatId    BigInt
+  senderMessageId Int
+  statusMessageId Int?
+  /// inline = تیک در متن؛ reaction = واکنش روی رسانه
+  mode            String   @default("reaction")
+  textBody        String?
+  /// pending | delivered | read
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+
+  @@index([senderUserId, partnerUserId, status])
+  @@index([partnerUserId, status])
+}
+
+/// کد هدیه / ووچر تبلیغاتی — سکه رایگان با محدودیت زمان و تعداد
+model VoucherCode {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  coinAmount  Int
+  expiresAt   DateTime?
+  maxUses     Int       @default(1)
+  currentUses Int       @default(0)
+  isActive    Boolean   @default(true)
+  /// یادداشت ادمین (مثلاً «تبلیغات اینستا»)
+  note        String?
+  createdById Int?
+  createdAt   DateTime  @default(now())
+  redemptions VoucherRedemption[]
+
+  @@index([isActive, expiresAt])
+}
+
+model VoucherRedemption {
+  id         Int         @id @default(autoincrement())
+  voucherId  Int
+  userId     Int
+  voucher    VoucherCode @relation(fields: [voucherId], references: [id])
+  redeemedAt DateTime    @default(now())
+
+  @@unique([voucherId, userId])
+  @@index([userId])
+}
+
+/// درخواست فروش سکه توسط کاربر (تسویه به کارت بانکی)
+model CoinSellRequest {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  coins       Int
+  /// نرخ تومان به‌ازای هر سکه در زمان ثبت (ثابت ادمین: COIN_SELL_PRICE_TOMAN)
+  rateToman   Int
+  amountToman Int
+  /// شماره کارت ۱۶ رقمی (فقط رقم)
+  cardNumber  String
+  /// open | paid | rejected
+  status      String    @default("open")
+  adminNote   String?
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+/// اطلاع بازدید پروفایل (رایگان) — یک ردیف per viewer→viewee برای کول‌داون
+model ProfileViewNotify {
+  id         Int      @id @default(autoincrement())
+  viewerId   Int
+  vieweeId   Int
+  viewer     User     @relation("ProfileViewViewers", fields: [viewerId], references: [id])
+  viewee     User     @relation("ProfileViewViewees", fields: [vieweeId], references: [id])
+  lastSentAt DateTime @default(now())
+
+  @@unique([viewerId, vieweeId])
+  @@index([vieweeId, lastSentAt])
+}
+
+/// اطلاع‌رسانی یک‌باره وقتی چت هدف تمام شود (۱ سکه)
+model ChatEndWatch {
+  id         Int       @id @default(autoincrement())
+  watcherId  Int
+  targetId   Int
+  watcher    User      @relation("ChatEndWatchers", fields: [watcherId], references: [id])
+  target     User      @relation("ChatEndTargets", fields: [targetId], references: [id])
+  createdAt  DateTime  @default(now())
+  /// وقتی اطلاع ارسال شد پر می‌شود — قبل از آن فعال است
+  consumedAt DateTime?
+
+  @@index([targetId, consumedAt])
+  @@index([watcherId, targetId])
+}
+
+/// کسر سکه وصل ناشناس — برای بازپرداخت اگر طرف مقابل زود قطع کند
+model QuickMatchCharge {
+  id          Int       @id @default(autoincrement())
+  payerId     Int
+  partnerId   Int
+  payer       User      @relation("QuickMatchPayers", fields: [payerId], references: [id])
+  partner     User      @relation("QuickMatchPartners", fields: [partnerId], references: [id])
+  amount      Int       @default(2)
+  connectedAt DateTime  @default(now())
+  /// پایان چت (با یا بدون بازپرداخت)
+  endedAt     DateTime?
+  /// اگر پر باشد، سکه برگردانده شده (ضد double-refund)
+  refundedAt  DateTime?
+
+  @@index([payerId, partnerId, refundedAt])
+  @@index([partnerId, endedAt])
+  @@index([connectedAt])
+}
+

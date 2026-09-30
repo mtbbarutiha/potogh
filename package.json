@@ -1,0 +1,45 @@
+{
+  "name": "patogh-bot",
+  "version": "1.0.0",
+  "description": "ربات چت ناشناس شبیه پاتوق — مرحله ۱",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "watchdog": "node scripts/watchdog.mjs",
+    "dev:safe": "node scripts/watchdog.mjs",
+    "restart": "node -e \"const fs=require('fs');const p='/tmp/patogh-bot.pid';try{const pid=+fs.readFileSync(p,'utf8');process.kill(pid,'SIGTERM');console.log('sent SIGTERM to',pid)}catch(e){console.log('no bot pid',e.message)}\"",
+    "build": "tsc",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate-from-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts",
+    "db:seed-fake": "tsx scripts/seed-fake-users.ts",
+    "db:wipe-fake": "tsx scripts/wipe-fake-users.ts",
+    "db:refresh-fake-photos": "tsx scripts/refresh-fake-photos.ts",
+    "db:set-fake-default-photos": "tsx scripts/set-fake-default-photos.ts"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "anonymous-chat"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grammyjs/runner": "^2.0.3",
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^17.4.2",
+    "grammy": "^1.45.1",
+    "ioredis": "^5.11.1",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/sharp": "^0.31.1",
+    "prisma": "^5.22.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

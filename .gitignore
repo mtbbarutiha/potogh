@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+prisma/*.db
+prisma/*.db-journal
+*.log
+.DS_Store
+
+# Durable channel publish dedupe log (lives on VPS; seed via channel-publish --seed-known)
+data/channel-publish-log.json
+data/channel-publish-log.json.*.tmp
+
+# earn tutorial HQ build intermediates
+assets/banners/channel-posts/earn-tutorial-hq/clips/
+assets/banners/channel-posts/earn-tutorial-hq/video_silent.mp4
+
+# earn teaser pro intermediates
+assets/banners/channel-posts/earn-teaser-pro/clips/
+assets/banners/channel-posts/earn-teaser-pro/video_silent.mp4
+assets/banners/channel-posts/earn-teaser-pro/frames/
+assets/banners/channel-posts/earn-teaser-pro/audio/*.mp3
