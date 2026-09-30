@@ -617,12 +617,28 @@ profileHandler.callbackQuery(/^adm:photo:(ok|no):(\d+)$/, async (ctx) => {
       photoStatus: "approved",
     });
     await ctx.answerCallbackQuery({ text: "تأیید شد" });
-    await ctx.api
-      .sendMessage(
-        Number(user.telegramId),
-        "✅ عکس پروفایلت تأیید شد و الان برای بقیه نمایش داده می‌شود.",
-      )
-      .catch(() => undefined);
+    // پیش‌گرم: عکس با نشان را همین حالا بساز، به کاربر به‌عنوان تأیید بفرست،
+    // و file_id را کش کن تا اولین نمایش/اتصال برای بقیه هم فوری باشد.
+    const approvedCaption =
+      "✅ عکس پروفایلت تأیید شد و الان برای بقیه نمایش داده می‌شود.";
+    try {
+      const fresh = await prisma.user.findUnique({ where: { id: user.id } });
+      const {
+        publicPhotoWithBadge,
+        publicPhotoCacheKey,
+        rememberPhotoFromMessage,
+      } = await import("../lib/faceBadgePhoto.js");
+      const key = publicPhotoCacheKey(fresh!);
+      const photo = await publicPhotoWithBadge(ctx.api, fresh!);
+      const sent = await ctx.api.sendPhoto(Number(user.telegramId), photo, {
+        caption: approvedCaption,
+      });
+      rememberPhotoFromMessage(key, sent);
+    } catch {
+      await ctx.api
+        .sendMessage(Number(user.telegramId), approvedCaption)
+        .catch(() => undefined);
+    }
     await checkProfileCompletionRewards(user.id, {
       api: ctx.api,
       telegramId: user.telegramId,

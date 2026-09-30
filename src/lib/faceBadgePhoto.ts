@@ -6,7 +6,7 @@ import { InputFile } from "grammy";
 import type { Api } from "grammy";
 import type { Message } from "grammy/types";
 import { defaultAvatarPath } from "./avatars.js";
-import { fetchWithTimeout } from "./timeout.js";
+import { fetchWithTimeout, withTimeout } from "./timeout.js";
 
 /** محدودیت موازی sharp — روی CPU ضعیف مهم است */
 sharp.concurrency(3);
@@ -36,6 +36,61 @@ let noPhotoBuf: Buffer | null = null;
 /** file_id تلگرام بعد از اولین آپلود — ارسال بعدی بدون پردازش */
 const telegramFileIdCache = new Map<string, { fileId: string; at: number }>();
 const FILE_ID_TTL_MS = 7 * 24 * 60 * 60_000;
+/** سقف کش file_id — بالا نگه داشته می‌شود تا کاربران پرتکرار زود بیرون نیفتند */
+const PHOTO_ID_MAX = 5000;
+
+// ——— persist کش file_id روی دیسک تا بین ری‌استارت‌ها گرم بماند ———
+const PHOTO_DATA_DIR = process.env.THUMB_DIR
+  ? path.dirname(process.env.THUMB_DIR)
+  : path.resolve(HERE, "../../data");
+const PHOTO_ID_INDEX = path.join(PHOTO_DATA_DIR, "photo-fileids.json");
+let photoIdSaveTimer: ReturnType<typeof setTimeout> | undefined;
+let photoIdLoaded = false;
+
+async function loadPhotoIdCache(): Promise<void> {
+  if (photoIdLoaded) return;
+  photoIdLoaded = true;
+  try {
+    const raw = await fs.readFile(PHOTO_ID_INDEX, "utf8");
+    const obj = JSON.parse(raw) as Record<
+      string,
+      { fileId?: string; at?: number }
+    >;
+    const now = Date.now();
+    for (const [k, v] of Object.entries(obj)) {
+      if (
+        v &&
+        typeof v.fileId === "string" &&
+        now - (v.at ?? 0) < FILE_ID_TTL_MS
+      ) {
+        telegramFileIdCache.set(k, { fileId: v.fileId, at: v.at ?? now });
+      }
+    }
+  } catch {
+    /* هنوز فایلی نیست */
+  }
+}
+
+async function savePhotoIdCache(): Promise<void> {
+  try {
+    const obj: Record<string, { fileId: string; at: number }> = {};
+    for (const [k, v] of telegramFileIdCache) obj[k] = v;
+    await fs.mkdir(path.dirname(PHOTO_ID_INDEX), { recursive: true });
+    await fs.writeFile(PHOTO_ID_INDEX, JSON.stringify(obj));
+  } catch {
+    /* ignore */
+  }
+}
+
+function schedulePhotoIdSave(): void {
+  if (photoIdSaveTimer) return;
+  photoIdSaveTimer = setTimeout(() => {
+    photoIdSaveTimer = undefined;
+    void savePhotoIdCache();
+  }, 5_000);
+}
+
+void loadPhotoIdCache();
 
 /** بافر خام دانلودشده از تلگرام */
 const rawDownloadCache = new Map<string, { buf: Buffer; at: number }>();
@@ -89,7 +144,8 @@ export function cachedTelegramFileId(key: string): string | null {
 
 export function rememberTelegramFileId(key: string, fileId: string) {
   telegramFileIdCache.set(key, { fileId, at: Date.now() });
-  trimMap(telegramFileIdCache, 500);
+  trimMap(telegramFileIdCache, PHOTO_ID_MAX);
+  schedulePhotoIdSave();
 }
 
 /** از پیام sendPhoto، بزرگ‌ترین file_id را کش کن */
@@ -173,6 +229,8 @@ export async function overlayFaceBadge(
 }
 
 const downloadInflight = new Map<string, Promise<Buffer>>();
+const GETFILE_TIMEOUT_MS = 4_000;
+const DOWNLOAD_TIMEOUT_MS = 6_000;
 
 async function downloadTelegramFile(api: Api, fileId: string): Promise<Buffer> {
   const hit = rawDownloadCache.get(fileId);
@@ -182,10 +240,15 @@ async function downloadTelegramFile(api: Api, fileId: string): Promise<Buffer> {
   if (inflight) return inflight;
 
   const task = (async () => {
-    const file = await api.getFile(fileId);
+    // getFile گاهی روی شبکه ایران ۱۰–۱۶ثانیه طول می‌کشد و کل آپدیت را timeout می‌کند
+    const file = await withTimeout(
+      api.getFile(fileId),
+      GETFILE_TIMEOUT_MS,
+      "getFile",
+    );
     if (!file.file_path) throw new Error("file_path missing");
     const url = `https://api.telegram.org/file/bot${api.token}/${file.file_path}`;
-    const res = await fetchWithTimeout(url, undefined, 10_000);
+    const res = await fetchWithTimeout(url, undefined, DOWNLOAD_TIMEOUT_MS);
     if (!res.ok) throw new Error(`download failed: ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
     rawDownloadCache.set(fileId, { buf, at: Date.now() });

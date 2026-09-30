@@ -1191,19 +1191,60 @@ export async function connectUsers(
     }
   }
 
-  await sendChatReplyKeyboard(Number(a.telegramId), langA, replyA);
-  await sendChatReplyKeyboard(Number(b.telegramId), langB, replyB);
+  // دو طرف مستقل‌اند → موازی (لحظه‌ی وصل سریع‌تر)؛ ترتیب «کیبورد بعد پیام» برای هر کاربر حفظ می‌شود.
+  const sendSide = async (
+    chatId: number,
+    lang: Lang,
+    kb: ReturnType<typeof chattingKeyboard>,
+    inline: ReturnType<typeof chattingInlineKeyboard>,
+  ) => {
+    await sendChatReplyKeyboard(chatId, lang, kb);
+    return api.sendMessage(chatId, t(lang, "chat_connected"), {
+      reply_markup: inline,
+    });
+  };
+  const [ra, rb] = await Promise.allSettled([
+    sendSide(Number(a.telegramId), langA, replyA, inlineA),
+    sendSide(Number(b.telegramId), langB, replyB, inlineB),
+  ]);
 
-  const ma = await api.sendMessage(
-    Number(a.telegramId),
-    t(langA, "chat_connected"),
-    { reply_markup: inlineA },
-  );
-  const mb = await api.sendMessage(
-    Number(b.telegramId),
-    t(langB, "chat_connected"),
-    { reply_markup: inlineB },
-  );
+  // مقاوم در برابر بلاک: اگر یک طرف در دسترس نباشد، اتصال تمیز لغو شود (نه خطا)
+  if (ra.status === "rejected" || rb.status === "rejected") {
+    await patchUser(a.id, { state: "idle", chatPartnerId: null, secureChat: false });
+    await patchUser(b.id, { state: "idle", chatPartnerId: null, secureChat: false });
+    const { syncIdleUserMenu } = await import("../botMenu.js");
+    void syncIdleUserMenu(api, a.telegramId);
+    void syncIdleUserMenu(api, b.telegramId);
+    // سکه‌ی چت سریع برگردد (چون اتصال برقرار نشد)
+    if (quickPayers.length) {
+      for (const pid of quickPayers) {
+        await creditCoins(pid, QUICK_MATCH_COST).catch(() => undefined);
+      }
+    }
+    const failMsg = (lang: Lang) =>
+      tr(
+        lang,
+        "اتصال برقرار نشد چون طرف مقابل در دسترس نیست. دوباره امتحان کن.",
+        "Couldn't connect — the other person is unavailable. Please try again.",
+      );
+    if (ra.status === "fulfilled" && a.telegramId < 9000000000n) {
+      await api
+        .sendMessage(Number(a.telegramId), failMsg(langA), {
+          reply_markup: mainKeyboard(langA),
+        })
+        .catch(() => undefined);
+    }
+    if (rb.status === "fulfilled" && b.telegramId < 9000000000n) {
+      await api
+        .sendMessage(Number(b.telegramId), failMsg(langB), {
+          reply_markup: mainKeyboard(langB),
+        })
+        .catch(() => undefined);
+    }
+    return "busy";
+  }
+  const ma = ra.value;
+  const mb = rb.value;
 
   await logPairMessages({
     aUserId: a.id,
