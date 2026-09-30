@@ -14,58 +14,115 @@ let lastInaccessibleLog = 0;
 
 export type MemberStatus = "member" | "not_member" | "unknown";
 
+export type ChannelRef = {
+  /** @username (خالی اگر فقط id عددی باشد) */
+  username: string;
+  /** مرجع getChatMember: id عددی یا @username */
+  ref: string | number;
+  /** لینک عضویت */
+  url: string;
+};
+
+/** یک ورودی خام (@username / لینک / id عددی) را به ChannelRef تبدیل می‌کند */
+function parseChannelEntry(raw: string): ChannelRef | null {
+  const s = raw.trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) {
+    const m = s.match(/t\.me\/([A-Za-z0-9_]+)/i);
+    if (!m) return null;
+    const uname = `@${m[1]}`;
+    return { username: uname, ref: uname, url: `https://t.me/${m[1]}` };
+  }
+  if (/^-?\d+$/.test(s)) {
+    // id عددی — بدون username لینک عضویت نداریم
+    return { username: "", ref: Number(s), url: "" };
+  }
+  const uname = s.startsWith("@") ? s : `@${s}`;
+  return { username: uname, ref: uname, url: `https://t.me/${uname.slice(1)}` };
+}
+
+/**
+ * لیست کانال‌های عضویت اجباری. FORCE_JOIN_CHANNEL می‌تواند چند کانال را با
+ * کاما / فاصله / خط جدید جدا کند. FORCE_JOIN_CHAT_ID (id عددی) به‌عنوان
+ * مرجع مطمئن‌تر برای کانال اول اعمال می‌شود (سازگاری با قبل).
+ */
+export function forceJoinChannels(): ChannelRef[] {
+  const raw = (process.env.FORCE_JOIN_CHANNEL ?? "").trim();
+  if (!raw) return [];
+  const list = raw
+    .split(/[,\n\s]+/)
+    .map(parseChannelEntry)
+    .filter((c): c is ChannelRef => c != null);
+
+  const idRaw = (process.env.FORCE_JOIN_CHAT_ID ?? "").trim();
+  if (list.length && idRaw && /^-?\d+$/.test(idRaw)) {
+    list[0] = { ...list[0]!, ref: Number(idRaw) };
+  }
+  return list;
+}
+
 /**
  * آیا عضویت اجباری فعال است؟ اگر FORCE_JOIN_CHANNEL تنظیم نشده باشد،
  * گیت غیرفعال است تا کاربران بدون کانال گیر نکنند.
  */
 export function forceJoinEnabled(): boolean {
-  return Boolean((process.env.FORCE_JOIN_CHANNEL ?? "").trim());
+  return forceJoinChannels().length > 0;
 }
 
-/** @username یا لینک کانال (فقط وقتی forceJoinEnabled() true است معنا دارد) */
+/** @username کانال اول — برای پیام‌های تک‌کاناله/لاگ */
 export function channelUsername(): string {
-  const raw = (process.env.FORCE_JOIN_CHANNEL ?? "").trim();
-  if (/^https?:\/\//i.test(raw)) {
-    const m = raw.match(/t\.me\/([A-Za-z0-9_]+)/i);
-    return m ? `@${m[1]}` : raw;
-  }
-  if (/^-?\d+$/.test(raw)) return raw;
-  return raw.startsWith("@") ? raw : `@${raw}`;
+  return forceJoinChannels()[0]?.username ?? "";
 }
 
-/** آیدی عددی کانال — چک عضویت مطمئن‌تر است */
+/** مرجع کانال اول */
 export function channelChatId(): number | string {
-  const idRaw = (process.env.FORCE_JOIN_CHAT_ID ?? "").trim();
-  if (idRaw && /^-?\d+$/.test(idRaw)) return Number(idRaw);
-  return channelUsername();
+  return forceJoinChannels()[0]?.ref ?? "";
 }
 
 export function joinUrl(): string {
-  return `https://t.me/${channelUsername().replace(/^@/, "")}`;
+  return forceJoinChannels()[0]?.url ?? "";
 }
 
 export function joinKeyboard(lang: Lang) {
-  return new InlineKeyboard()
-    .url(lang === "en" ? "📣 Join channel" : "📣 عضویت در کانال", joinUrl())
-    .row()
-    .text(lang === "en" ? "✅ I've joined" : "✅ عضو شدم", "fj:check");
+  const kb = new InlineKeyboard();
+  const channels = forceJoinChannels();
+  channels.forEach((c, i) => {
+    if (!c.url) return;
+    const label =
+      channels.length > 1
+        ? lang === "en"
+          ? `📣 Join channel ${i + 1}`
+          : `📣 عضویت در کانال ${i + 1}`
+        : lang === "en"
+          ? "📣 Join channel"
+          : "📣 عضویت در کانال";
+    kb.url(label, c.url).row();
+  });
+  kb.text(lang === "en" ? "✅ I've joined" : "✅ عضو شدم", "fj:check");
+  return kb;
 }
 
 export function forceJoinPrompt(lang: Lang, withForwardHint = false): string {
+  const channels = forceJoinChannels();
+  const urls = channels.map((c) => c.url).filter(Boolean);
   const lines =
     lang === "en"
       ? [
-          "📣 Before registration, join our channel:",
-          joinUrl(),
+          channels.length > 1
+            ? "📣 Before registration, join our channels:"
+            : "📣 Before registration, join our channel:",
+          ...urls,
           "",
-          "1) Tap «Join channel»",
+          "1) Tap the «Join channel» button(s)",
           "2) Then tap «I've joined»",
         ]
       : [
-          "📣 قبل از ثبت‌نام، عضو کانال شو:",
-          joinUrl(),
+          channels.length > 1
+            ? "📣 قبل از ثبت‌نام، عضو کانال‌ها شو:"
+            : "📣 قبل از ثبت‌نام، عضو کانال شو:",
+          ...urls,
           "",
-          "۱) دکمه «عضویت در کانال» را بزن",
+          "۱) دکمه‌های «عضویت در کانال» را بزن",
           "۲) بعد «عضو شدم» را بزن",
         ];
 
@@ -74,7 +131,7 @@ export function forceJoinPrompt(lang: Lang, withForwardHint = false): string {
       "",
       ...(lang === "en"
         ? [
-            "If check fails: forward any post from the channel here.",
+            "If check fails: forward any post from a channel here.",
           ]
         : [
             "اگر تأیید نشد: یک پست از کانال را همین‌جا فوروارد کن.",
@@ -93,18 +150,17 @@ async function resolveLang(ctx: Context): Promise<Lang> {
   }
 }
 
-export async function checkChannelMember(
+/** وضعیت عضویت در یک کانال مشخص */
+async function checkOneChannel(
   ctx: Context,
+  channel: ChannelRef,
   userId: number,
 ): Promise<MemberStatus> {
-  const cached = memberCache.get(userId);
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return cached.ok ? "member" : "not_member";
+  // برای هر کانال هم id عددی و هم @username را امتحان کن
+  const refs: Array<string | number> = [channel.ref];
+  if (channel.username && channel.username !== channel.ref) {
+    refs.push(channel.username);
   }
-
-  const refs: Array<string | number> = [channelChatId()];
-  const uname = channelUsername();
-  if (refs[0] !== uname) refs.push(uname);
 
   let lastErr = "";
   for (const ref of refs) {
@@ -117,7 +173,6 @@ export async function checkChannelMember(
       const ok = ["creator", "administrator", "member", "restricted"].includes(
         m.status,
       );
-      memberCache.set(userId, { ok, at: Date.now() });
       return ok ? "member" : "not_member";
     } catch (err) {
       lastErr =
@@ -140,26 +195,60 @@ export async function checkChannelMember(
     if (Date.now() - lastInaccessibleLog > 60_000) {
       lastInaccessibleLog = Date.now();
       logger.error("forceJoin.bot_not_admin", {
-        channel: uname,
+        channel: channel.username || String(channel.ref),
         err: lastErr,
       });
     }
     return "unknown";
   }
 
-  logger.error("forceJoin.getChatMember_failed", {
-    userId,
-    err: lastErr,
-  });
+  logger.error("forceJoin.getChatMember_failed", { userId, err: lastErr });
   return "unknown";
 }
 
-/** آیا پیام فوروارد از کانال اجباری است؟ */
+/**
+ * وضعیت کلی: کاربر باید عضو **همه** کانال‌ها باشد.
+ * - not_member اگر در حداقل یک کانال قطعاً عضو نیست
+ * - unknown اگر عضو نبودن قطعی نیست ولی وضعیت بعضی کانال‌ها نامشخص است
+ * - member فقط اگر عضو همه‌ی کانال‌ها باشد
+ */
+export async function checkChannelMember(
+  ctx: Context,
+  userId: number,
+): Promise<MemberStatus> {
+  const channels = forceJoinChannels();
+  if (!channels.length) return "member";
+
+  const cached = memberCache.get(userId);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.ok ? "member" : "not_member";
+  }
+
+  let sawUnknown = false;
+  for (const channel of channels) {
+    const status = await checkOneChannel(ctx, channel, userId);
+    if (status === "not_member") {
+      memberCache.set(userId, { ok: false, at: Date.now() });
+      return "not_member";
+    }
+    if (status === "unknown") sawUnknown = true;
+  }
+
+  if (sawUnknown) return "unknown";
+
+  memberCache.set(userId, { ok: true, at: Date.now() });
+  return "member";
+}
+
+/** آیا پیام فوروارد از یکی از کانال‌های اجباری است؟ */
 export function isForwardFromRequiredChannel(msg: Message): boolean {
-  const expected = channelChatId();
-  const expectedNum =
-    typeof expected === "number" ? expected : Number(expected);
-  const expectedUser = channelUsername().replace(/^@/, "").toLowerCase();
+  const channels = forceJoinChannels();
+  const expectedNums = channels
+    .map((c) => (typeof c.ref === "number" ? c.ref : Number(c.ref)))
+    .filter((n) => Number.isFinite(n));
+  const expectedUsers = channels
+    .map((c) => c.username.replace(/^@/, "").toLowerCase())
+    .filter(Boolean);
 
   const anyMsg = msg as Message & {
     forward_from_chat?: { id: number; type?: string; username?: string };
@@ -170,18 +259,20 @@ export function isForwardFromRequiredChannel(msg: Message): boolean {
     forward_date?: number;
   };
 
+  const matches = (id?: number, username?: string): boolean => {
+    if (id != null && expectedNums.includes(id)) return true;
+    if (username && expectedUsers.includes(username.toLowerCase())) return true;
+    return false;
+  };
+
   const legacy = anyMsg.forward_from_chat;
-  if (legacy?.type === "channel") {
-    if (Number.isFinite(expectedNum) && legacy.id === expectedNum) return true;
-    if (legacy.username?.toLowerCase() === expectedUser) return true;
+  if (legacy?.type === "channel" && matches(legacy.id, legacy.username)) {
+    return true;
   }
 
   const origin = anyMsg.forward_origin;
   if (origin?.type === "channel" && origin.chat) {
-    if (Number.isFinite(expectedNum) && origin.chat.id === expectedNum) {
-      return true;
-    }
-    if (origin.chat.username?.toLowerCase() === expectedUser) return true;
+    if (matches(origin.chat.id, origin.chat.username)) return true;
   }
 
   return false;
