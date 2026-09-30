@@ -78,29 +78,41 @@ export function earnIntroText(
   minCoins = MIN_SELL_COINS,
 ): string {
   const toman = sellAmountToman(balance, rate);
+  const enough = balance >= minCoins;
+  const remaining = Math.max(0, minCoins - balance);
   if (lang === "en") {
     return [
-      "💵 Earn money — sell coins",
+      "💵 Earn money — sell your coins for cash",
+      "━━━━━━━━━━━━━━",
+      `💰 Your balance: ${formatNum(balance)} coins ≈ ${formatToman(toman)}`,
+      `🏷 Rate: ${formatNum(rate)} Toman per coin`,
+      `📊 Minimum to sell: ${formatNum(minCoins)} coins`,
       "",
-      `Balance: ${formatNum(balance)} coins`,
-      `Sell rate: ${formatNum(rate)} Toman per coin`,
-      `Your balance ≈ ${formatToman(toman)}`,
-      `Minimum to sell: ${formatNum(minCoins)} coins`,
+      enough
+        ? "✅ You can sell now. Tap «Sell my balance» below."
+        : `🔒 You need ${formatNum(remaining)} more coins to unlock selling.`,
       "",
-      "Tap sell → confirm → send your bank card number for payout.",
-      "Payout is reviewed by admins (pending until paid).",
+      "How it works:",
+      "1) Tap Sell → confirm the amount",
+      "2) Send your bank card number",
+      "3) Coins are held; admin pays and marks it done",
     ].join("\n");
   }
   return [
-    "💵 کسب درآمد — فروش سکه",
+    "💵 کسب درآمد — سکه‌هایت را نقد کن",
+    "━━━━━━━━━━━━━━",
+    `💰 موجودی تو: ${formatNum(balance)} سکه ≈ ${formatToman(toman)}`,
+    `🏷 نرخ فروش: هر سکه ${formatNum(rate)} تومان`,
+    `📊 حداقل برای فروش: ${formatNum(minCoins)} سکه`,
     "",
-    `موجودی تو: ${formatNum(balance)} سکه`,
-    `نرخ فروش: هر سکه ${formatNum(rate)} تومان`,
-    `ارزش موجودی ≈ ${formatToman(toman)}`,
-    `حداقل برای فروش: ${formatNum(minCoins)} سکه`,
+    enough
+      ? "✅ می‌توانی همین حالا بفروشی. دکمه «فروش موجودی» را بزن."
+      : `🔒 ${formatNum(remaining)} سکه دیگر لازم داری تا فروش باز شود.`,
     "",
-    "دکمه فروش را بزن → تأیید مبلغ → شماره کارت بانکی را بفرست.",
-    "پرداخت بعد از بررسی ادمین انجام می‌شود.",
+    "چطور کار می‌کند:",
+    "۱) دکمه فروش → تأیید مبلغ",
+    "۲) شماره کارت بانکی را بفرست",
+    "۳) سکه‌ها رزرو می‌شوند؛ ادمین واریز و تأیید می‌کند",
   ].join("\n");
 }
 

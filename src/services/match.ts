@@ -11,7 +11,13 @@ import {
 } from "../keyboards/main.js";
 import { langOf, t, tr, normalizeLang, type Lang } from "../i18n/index.js";
 import { cityLabel, provinceLabel } from "../data/locations.js";
-import { formatNum, QUICK_MATCH_COST, QUICK_MATCH_REFUND_MS } from "../data/packages.js";
+import {
+  formatNum,
+  QUICK_MATCH_COST,
+  QUICK_MATCH_REFUND_MS,
+  DIRECT_CHAT_REQUEST_COST,
+} from "../data/packages.js";
+import { debitCoins, creditCoins } from "./coins.js";
 import { logPairMessages, logChatMessage } from "./chatLog.js";
 import {
   debitQuickMatchPayersInTx,
@@ -685,6 +691,7 @@ export async function sendChatRequest(
   | "blocked"
   | "blocked_by"
   | "silent"
+  | "no_coins"
 > {
   const source = options?.source ?? "direct";
   const notifySender =
@@ -723,6 +730,14 @@ export async function sendChatRequest(
     } else {
       return "pending";
     }
+  }
+
+  // درخواست چت مستقیم هزینه دارد — کسر اتمی قبل از ساخت درخواست.
+  // (چت سریع «quick» جدا از طریق quickPayers هنگام وصل حساب می‌شود.)
+  const chargeDirect = source === "direct" && DIRECT_CHAT_REQUEST_COST > 0;
+  if (chargeDirect) {
+    const paid = await debitCoins(a.id, DIRECT_CHAT_REQUEST_COST);
+    if (!paid) return "no_coins";
   }
 
   const expiresAt = new Date(Date.now() + CHAT_REQUEST_TTL_MS);
@@ -809,6 +824,10 @@ export async function sendChatRequest(
       where: { id: req.id },
       data: { status: "cancelled" },
     });
+    // ارسال نشد → هزینه‌ی کسرشده را برگردان
+    if (chargeDirect) {
+      await creditCoins(a.id, DIRECT_CHAT_REQUEST_COST).catch(() => undefined);
+    }
     return "busy";
   }
 

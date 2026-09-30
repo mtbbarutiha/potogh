@@ -135,16 +135,23 @@ menuHandler.hears(btnAll("EARN"), async (ctx) => {
   const { MIN_SELL_COINS } = await import("../data/packages.js");
   const balance = user.diamonds ?? 0;
   const pending = await userHasOpenSell(user.id);
-  const canSell = balance >= MIN_SELL_COINS && !pending;
   const kb = new InlineKeyboard();
-  if (canSell) {
-    kb.text(lang === "en" ? "💵 Sell my balance" : "💵 فروش موجودی", "earn:sell")
-      .success()
-      .row();
-  } else if (pending) {
+  if (pending) {
     kb.text(
       lang === "en" ? "⏳ Payout pending review" : "⏳ در انتظار بررسی ادمین",
       "earn:close",
+    ).row();
+  } else if (balance >= MIN_SELL_COINS) {
+    kb.text(lang === "en" ? "💵 Sell my balance" : "💵 فروش موجودی", "earn:sell")
+      .success()
+      .row();
+  } else {
+    // موجودی کم — دکمه را نشان بده ولی خاموش/قفل تا کاربر بداند چرا
+    kb.text(
+      lang === "en"
+        ? `🔒 Sell (need ${formatNum(MIN_SELL_COINS)} coins)`
+        : `🔒 فروش (حداقل ${formatNum(MIN_SELL_COINS)} سکه)`,
+      "earn:need_more",
     ).row();
   }
   kb.text(lang === "en" ? "↩️ Close" : "↩️ بستن", "earn:close");

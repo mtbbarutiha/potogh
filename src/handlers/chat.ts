@@ -216,6 +216,17 @@ chatHandler.on("message:text", async (ctx, next) => {
       await replySilentReject(ctx, target.id, lang);
       return;
     }
+    if (result === "no_coins") {
+      await patchUser(user.id, { state: "idle" });
+      const { DIRECT_CHAT_REQUEST_COST, formatNum } = await import("../data/packages.js");
+      await ctx.reply(
+        lang === "en"
+          ? `You need ${DIRECT_CHAT_REQUEST_COST} coin to send a direct chat request.`
+          : `برای ارسال درخواست چت مستقیم به ${formatNum(DIRECT_CHAT_REQUEST_COST)} سکه نیاز داری.`,
+        { reply_markup: mainKeyboard(lang) },
+      );
+      return;
+    }
     if (result !== "ok") {
       await patchUser(user.id, { state: "idle" });
       await ctx.reply(

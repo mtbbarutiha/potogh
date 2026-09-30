@@ -22,7 +22,15 @@ type SectionDef = {
   labelFa: string;
   labelEn: string;
   isComplete: (user: User) => boolean;
+  /** جایزه اختصاصی این بخش — اگر تعیین نشود PROFILE_SECTION_REWARD */
+  reward?: number;
 };
+
+/** جایزه یک بخش پروفایل */
+export function sectionReward(id: ProfileSectionId): number {
+  const s = PROFILE_SECTIONS.find((x) => x.id === id);
+  return s?.reward ?? PROFILE_SECTION_REWARD;
+}
 
 export const PROFILE_SECTIONS: SectionDef[] = [
   {
@@ -78,6 +86,7 @@ export const PROFILE_SECTIONS: SectionDef[] = [
     labelFa: "عکس پروفایل",
     labelEn: "Profile photo",
     isComplete: (u) => u.photoStatus === "approved",
+    reward: 5,
   },
   {
     id: "face",
@@ -159,7 +168,7 @@ export async function checkProfileCompletionRewards(
     };
   }
 
-  const coins = newlyCompleted.length * PROFILE_SECTION_REWARD;
+  const coins = newlyCompleted.reduce((sum, id) => sum + sectionReward(id), 0);
   const updatedRewarded = [...already, ...newlyCompleted];
   const prevSections = user.profileRewardedSections;
 
@@ -238,7 +247,10 @@ export function profileCompletePanelText(user: User, lang: Lang): string {
   if (missing.length) {
     lines.push(t(lang, "profile_missing_sections"));
     for (const id of missing) {
-      lines.push(`• ${sectionLabel(id, lang)}`);
+      const r = sectionReward(id);
+      lines.push(
+        `• ${sectionLabel(id, lang)} (+${formatNum(r)} ${tr(lang, "سکه", "coins")})`,
+      );
     }
   } else {
     lines.push(t(lang, "profile_fully_complete"));

@@ -1,7 +1,6 @@
 import { Keyboard, InlineKeyboard } from "grammy";
 import {
   DIAMOND_PACKAGES,
-  DAILY_COIN_REWARD,
   DELETE_ACCOUNT_COST,
   GIFT_AMOUNTS,
   formatToman,
@@ -9,7 +8,6 @@ import {
   packagePickerLabel,
   vipPickerLabel,
 } from "../data/packages.js";
-import { canClaimDailyCoin } from "../services/dailyCoin.js";
 import { threadGiftButtonLabel } from "../services/threadGift.js";
 import {
   countryChoices,
@@ -505,23 +503,6 @@ export function coinsShopKeyboard(
 ) {
   const L = normalizeLang(lang);
   const kb = new InlineKeyboard();
-  if (canClaimDailyCoin(lastDailyCoinAt)) {
-    kb.text(
-      tr(
-        L,
-        `🎁 دریافت ${formatNum(DAILY_COIN_REWARD)} سکه روزانه`,
-        `🎁 Claim ${formatNum(DAILY_COIN_REWARD)} daily coins`,
-      ),
-      "coins:daily",
-    )
-      .success()
-      .row();
-  } else {
-    kb.text(
-      tr(L, "🎁 سکه روزانه (فردا)", "🎁 Daily coins (tomorrow)"),
-      "coins:daily:done",
-    ).row();
-  }
   kb.text(
     tr(L, "🎟 کد هدیه / ووچر", "🎟 Gift code / voucher"),
     "voucher:redeem",

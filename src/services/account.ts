@@ -208,12 +208,29 @@ export async function formatAdminUserLine(user: {
   username?: string | null;
 }) {
   const prev = await previousAccountIds(user.telegramId);
-  const lines = [
-    `کاربر: ${user.displayName ?? "—"}`,
-    user.username ? `یوزرنیم: @${user.username}` : null,
-    `شناسه فعلی: #${user.id}`,
+  // اطلاعات کامل کاربر را از دیتابیس بخوان تا آیدی داخلی ربات و مشخصات نمایش داده شود
+  const full = await prisma.user.findUnique({ where: { id: user.id } });
+  const { ensureUserCode } = await import("../db/users.js");
+  const code = await ensureUserCode(user.id, full?.userCode);
+  const genderFa =
+    full?.gender === "female" ? "خانم 👩" : full?.gender === "male" ? "آقا 👨" : "—";
+  const loc = [full?.province, full?.city].filter(Boolean).join("، ") || "—";
+  const lines: Array<string | null> = [
+    `کاربر: ${user.displayName ?? full?.displayName ?? "—"}`,
+    user.username || full?.username ? `یوزرنیم: @${user.username ?? full?.username}` : null,
+    code ? `آیدی ربات: /user_${code}` : null,
+    `شناسه داخلی: #${user.id}`,
     `تلگرام: ${user.telegramId}`,
   ];
+  if (full) {
+    lines.push(
+      `جنسیت: ${genderFa} | سن: ${full.age ?? "—"}`,
+      `موقعیت: ${loc}`,
+      `سکه: ${full.diamonds} | احراز چهره: ${full.faceVerified ? "✅" : "—"}`,
+      full.bio?.trim() ? `بیو: ${full.bio.trim()}` : null,
+      `عضویت: ${full.createdAt.toLocaleString("fa-IR")}`,
+    );
+  }
   if (prev.length) {
     lines.push(
       `شناسه‌های قدیمی: ${prev.map((p) => `#${p.originalUserId}`).join("، ")}`,

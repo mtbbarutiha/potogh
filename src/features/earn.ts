@@ -46,6 +46,20 @@ earnHandler.callbackQuery("earn:close", async (ctx) => {
     .catch(() => undefined);
 });
 
+earnHandler.callbackQuery("earn:need_more", async (ctx) => {
+  const user = await findByTelegram(ctx.from!.id);
+  const lang = user?.language === "en" ? "en" : "fa";
+  const balance = user?.diamonds ?? 0;
+  const need = Math.max(0, MIN_SELL_COINS - balance);
+  await ctx.answerCallbackQuery({
+    text:
+      lang === "en"
+        ? `Minimum to sell is ${formatNum(MIN_SELL_COINS)} coins.\nYou have ${formatNum(balance)} — need ${formatNum(need)} more.`
+        : `حداقل برای فروش ${formatNum(MIN_SELL_COINS)} سکه است.\nموجودی تو ${formatNum(balance)} — ${formatNum(need)} سکه دیگر لازم داری.`,
+    show_alert: true,
+  });
+});
+
 earnHandler.callbackQuery("earn:cancel", async (ctx) => {
   const user = await findByTelegram(ctx.from!.id);
   if (user && parseSellCardPending(user.pendingSellCard) != null) {

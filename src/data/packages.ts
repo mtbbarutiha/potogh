@@ -70,7 +70,6 @@ export function coinsShopIntroText(
       `Balance: ${formatNum(balance)}`,
       "",
       `Each coin: ${formatNum(COIN_PRICE_TOMAN)} Toman or ${formatNum(COIN_PRICE_STARS)} Star`,
-      `🎁 ${formatNum(DAILY_COIN_REWARD)} free coins daily — top button`,
       "Pick a package → Stars or card transfer",
     ].join("\n");
   }
@@ -80,7 +79,6 @@ export function coinsShopIntroText(
     `موجودی: ${formatNum(balance)}`,
     "",
     `قیمت هر سکه: ${formatNum(COIN_PRICE_TOMAN)} تومان یا ${formatNum(COIN_PRICE_STARS)} Star`,
-    `🎁 هر روز ${formatNum(DAILY_COIN_REWARD)} سکه رایگان — دکمه بالای لیست`,
     "بسته را بزن → Stars یا کارت‌به‌کارت",
   ].join("\n");
 }
@@ -140,8 +138,10 @@ export function packageCheckoutText(
 
 export const REFERRAL_BONUS = 25;
 export const WELCOME_DIAMONDS = 15;
-/** سکه رایگان روزانه با ورود به ربات */
+/** @deprecated سکه رایگان روزانه حذف شد — فقط برای سازگاری import باقی مانده */
 export const DAILY_COIN_REWARD = 10;
+/** هزینه ارسال درخواست چت مستقیم (از روی پروفایل/آیدی) */
+export const DIRECT_CHAT_REQUEST_COST = 1;
 export const BOOST_COST = 40;
 export const BOOST_HOURS = 12;
 /** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) */

@@ -34,7 +34,6 @@ import {
   coinsShopIntroText,
   packageCheckoutText,
 } from "../data/packages.js";
-import { claimDailyCoin } from "../services/dailyCoin.js";
 import { redeemVoucher } from "../services/vouchers.js";
 import { checkUserRate } from "../middleware/rateLimit.js";
 import { langOf, tr, btnAll } from "../i18n/index.js";
@@ -196,71 +195,6 @@ paymentsHandler.callbackQuery("voucher:redeem", async (ctx) => {
   await patchUser(user.id, { state: "await_voucher_code" });
   await ctx.answerCallbackQuery();
   await promptVoucherCode(ctx, langOf(user));
-});
-
-paymentsHandler.callbackQuery("coins:daily", async (ctx) => {
-  const user = await requireRegistered(ctx);
-  if (!user) {
-    await ctx.answerCallbackQuery();
-    return;
-  }
-  if (ctx.from && !checkUserRate(ctx.from.id, "coin_action")) {
-    await ctx.answerCallbackQuery({
-      text: tr(langOf(user), "⏳ کمی صبر کن", "⏳ Slow down"),
-    });
-    return;
-  }
-  const lang = langOf(user);
-  const result = await claimDailyCoin(user.id);
-  if (!result.ok) {
-    await ctx.answerCallbackQuery({
-      text: tr(lang, "امروز قبلاً گرفتی — فردا بیا", "Already claimed today — come back tomorrow"),
-      show_alert: true,
-    });
-    try {
-      await ctx.editMessageReplyMarkup({
-        reply_markup: coinsShopKeyboard(new Date(), lang),
-      });
-    } catch {
-      /* ignore */
-    }
-    return;
-  }
-  await ctx.answerCallbackQuery({
-    text: tr(
-      lang,
-      `✅ ${formatNum(result.amount)} سکه اضافه شد`,
-      `✅ ${formatNum(result.amount)} coins added`,
-    ),
-  });
-  const intro = coinsShopIntroText(lang === "en" ? "en" : "fa", result.balance);
-  try {
-    await ctx.editMessageText(intro, {
-      reply_markup: coinsShopKeyboard(new Date(), lang),
-    });
-  } catch {
-    await ctx.reply(
-      tr(
-        lang,
-        `🎁 ${formatNum(result.amount)} سکه روزانه دریافت شد.\nموجودی: ${formatNum(result.balance)} 💰`,
-        `🎁 Daily ${formatNum(result.amount)} coins claimed.\nBalance: ${formatNum(result.balance)} 💰`,
-      ),
-      { reply_markup: coinsShopKeyboard(new Date(), lang) },
-    );
-  }
-});
-
-paymentsHandler.callbackQuery("coins:daily:done", async (ctx) => {
-  const user = await requireRegistered(ctx);
-  const lang = user ? langOf(user) : "fa";
-  await ctx.answerCallbackQuery({
-    text: tr(
-      lang,
-      "امروز سکه روزانه‌ات را گرفتی — فردا دوباره بیا 🎁",
-      "You already claimed today's coins — come back tomorrow 🎁",
-    ),
-    show_alert: true,
-  });
 });
 
 paymentsHandler.callbackQuery(/^pkg:(.+)$/, async (ctx) => {

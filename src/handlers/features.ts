@@ -1675,6 +1675,16 @@ featuresHandler.callbackQuery(/^exp:chat:(\d+)$/, async (ctx) => {
     await replySilentReject(ctx, targetId, lang);
     return;
   }
+  if (result === "no_coins") {
+    const { DIRECT_CHAT_REQUEST_COST, formatNum } = await import("../data/packages.js");
+    await ctx.reply(
+      lang === "en"
+        ? `You need ${DIRECT_CHAT_REQUEST_COST} coin to send a direct chat request. Buy coins from the coins menu.`
+        : `برای ارسال درخواست چت مستقیم به ${formatNum(DIRECT_CHAT_REQUEST_COST)} سکه نیاز داری. از منوی سکه شارژ کن.`,
+      { reply_markup: mainKeyboard(lang) },
+    );
+    return;
+  }
   if (result !== "ok") {
     await ctx.reply("ارسال نشد. دوباره امتحان کن.");
     return;
@@ -2248,6 +2258,17 @@ featuresHandler.callbackQuery(/^nearby_chat:(\d+)$/, async (ctx) => {
   if (result === "silent") {
     const { replySilentReject } = await import("../services/chatSilent.js");
     await replySilentReject(ctx, targetId, lang, { asAlert: true });
+    return;
+  }
+  if (result === "no_coins") {
+    const { DIRECT_CHAT_REQUEST_COST, formatNum } = await import("../data/packages.js");
+    await ctx.answerCallbackQuery({
+      text:
+        lang === "en"
+          ? `Need ${DIRECT_CHAT_REQUEST_COST} coin to send a request`
+          : `برای درخواست چت به ${formatNum(DIRECT_CHAT_REQUEST_COST)} سکه نیاز داری`,
+      show_alert: true,
+    });
     return;
   }
   if (result !== "ok") {
