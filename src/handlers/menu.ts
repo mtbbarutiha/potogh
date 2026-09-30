@@ -9,7 +9,7 @@ import {
   chattingKeyboard,
   confirmEndChatKeyboard,
 } from "../keyboards/main.js";
-import { btnAll, langOf, t, fullGuide } from "../i18n/index.js";
+import { btnAll, langOf, t, tr, fullGuide } from "../i18n/index.js";
 import {
   formatNum,
   BOOST_COST,
@@ -396,6 +396,87 @@ menuHandler.hears(btnAll("ADD_CONTACT"), async (ctx) => {
     lang === "en" ? "Could not add to contacts." : "افزودن به مخاطبین ممکن نشد.",
     { reply_markup: kb },
   );
+});
+
+// ——— هدیه حین چت ———
+menuHandler.hears(btnAll("CHAT_GIFT"), async (ctx) => {
+  const user = await findByTelegram(ctx.from!.id);
+  if (!user) return;
+  const lang = langOf(user);
+  if (user.state !== "chatting" || !user.chatPartnerId) {
+    await ctx.reply(t(lang, "only_in_chat"));
+    return;
+  }
+  const { chatGiftMenuKeyboard } = await import("../services/chatGift.js");
+  await ctx.reply(
+    tr(
+      lang,
+      "🎁 یک هدیه برای طرف مقابل بفرست:\n۶۰٪ سکه‌ی هدیه به او می‌رسد.",
+      "🎁 Send a gift to your partner:\n60% of the coins go to them.",
+    ),
+    { reply_markup: chatGiftMenuKeyboard(lang) },
+  );
+});
+
+menuHandler.callbackQuery("gift:close", async (ctx) => {
+  await safeAnswerCallback(ctx);
+  await ctx
+    .editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } })
+    .catch(() => undefined);
+});
+
+menuHandler.callbackQuery(/^gift:send:([a-z]+)$/, async (ctx) => {
+  await safeAnswerCallback(ctx);
+  const user = await findByTelegram(ctx.from!.id);
+  if (!user) return;
+  const lang = langOf(user);
+  if (user.state !== "chatting" || !user.chatPartnerId) {
+    await ctx.reply(t(lang, "only_in_chat"));
+    return;
+  }
+  const partner = await prisma.user.findUnique({
+    where: { id: user.chatPartnerId },
+  });
+  if (!partner || partner.chatPartnerId !== user.id) {
+    await ctx.reply(t(lang, "chat_ended"));
+    return;
+  }
+  const { sendChatGift, chatGiftName } = await import("../services/chatGift.js");
+  const res = await sendChatGift(user.id, partner.id, ctx.match![1]!);
+  if (!res.ok) {
+    if (res.reason === "no_coins") {
+      await ctx.answerCallbackQuery({
+        text: tr(lang, "سکه کافی نداری", "Not enough coins"),
+        show_alert: true,
+      }).catch(() => undefined);
+    }
+    return;
+  }
+  const { gift, recipientShare, senderBalance } = res;
+  // به فرستنده
+  await ctx
+    .editMessageText(
+      tr(
+        lang,
+        `${gift.emoji} ${chatGiftName(gift, lang)} فرستادی!\n−${formatNum(gift.cost)}💰 · موجودی: ${formatNum(senderBalance)}💰`,
+        `${gift.emoji} You sent a ${chatGiftName(gift, "en")}!\n−${formatNum(gift.cost)}💰 · Balance: ${formatNum(senderBalance)}💰`,
+      ),
+    )
+    .catch(() => undefined);
+  // به گیرنده — در چت ناشناس، بدون لو رفتن هویت
+  if (partner.telegramId < 9000000000n) {
+    const pLang = langOf(partner);
+    await ctx.api
+      .sendMessage(
+        Number(partner.telegramId),
+        tr(
+          pLang,
+          `${gift.emoji} طرف مقابل بهت ${chatGiftName(gift, pLang)} هدیه داد!\n+${formatNum(recipientShare)}💰 به حسابت اضافه شد 💝`,
+          `${gift.emoji} Your partner sent you a ${chatGiftName(gift, pLang)}!\n+${formatNum(recipientShare)}💰 added to your balance 💝`,
+        ),
+      )
+      .catch(() => undefined);
+  }
 });
 
 menuHandler.callbackQuery("chat:contact", async (ctx) => {

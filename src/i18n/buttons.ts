@@ -19,6 +19,7 @@ export type BtnKey =
   | "END_CHAT"
   | "VIEW_PARTNER"
   | "ADD_CONTACT"
+  | "CHAT_GIFT"
   | "SECURE_CHAT_ON"
   | "SECURE_CHAT_OFF"
   | "SEND_LOCATION"
@@ -44,6 +45,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     END_CHAT: "🔚 قطع چت",
     VIEW_PARTNER: "🕵️ پروفایل طرف مقابل",
     ADD_CONTACT: "➕ افزودن به مخاطبین",
+    CHAT_GIFT: "🎁 هدیه",
     SECURE_CHAT_ON: "🔒 چت امن",
     SECURE_CHAT_OFF: "🔓 خاموش کردن چت امن",
     SEND_LOCATION: "📍 ارسال موقعیت",
@@ -67,6 +69,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     END_CHAT: "🔚 End chat",
     VIEW_PARTNER: "🕵️ Partner profile",
     ADD_CONTACT: "➕ Add to contacts",
+    CHAT_GIFT: "🎁 Gift",
     SECURE_CHAT_ON: "🔒 Secure chat",
     SECURE_CHAT_OFF: "🔓 Turn off secure chat",
     SEND_LOCATION: "📍 Send location",

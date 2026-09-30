@@ -149,6 +149,8 @@ export function chattingKeyboard(
     .text(btn(L, "VIEW_PARTNER"), "primary")
     .row()
     .text(btn(L, "ADD_CONTACT"), "success")
+    .text(btn(L, "CHAT_GIFT"), "primary")
+    .row()
     .text(
       secure ? btn(L, "SECURE_CHAT_OFF") : btn(L, "SECURE_CHAT_ON"),
       "primary",
