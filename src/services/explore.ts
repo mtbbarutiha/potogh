@@ -1,6 +1,7 @@
 import { prisma } from "../db/prisma.js";
 import { patchUser, ensureUserCode } from "../db/users.js";
 import { genderLabel, formatNum } from "../data/packages.js";
+import { ratingLabel } from "./chatRating.js";
 import { type Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import {
@@ -675,6 +676,7 @@ export async function showProfileByUserCode(
     candidate.bio ? `┃ ${candidate.bio}` : null,
     interests ? `┃ ✨ ${interests}` : null,
     `┃ 👁 ${formatNum(viewsShown)}`,
+    `┃ ${ratingLabel(candidate.ratingSum, candidate.ratingCount, "fa")}`,
     `┃ ${distanceLine}`,
     `┃ ${onlineStatus(candidate)}`,
     "┗━━━━━━━━━━━━┛",

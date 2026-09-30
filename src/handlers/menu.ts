@@ -479,6 +479,31 @@ menuHandler.callbackQuery(/^gift:send:([a-z]+)$/, async (ctx) => {
   }
 });
 
+// ——— امتیازدهی بعد از چت ———
+menuHandler.callbackQuery(/^rate:(\d+):([1-5])$/, async (ctx) => {
+  await safeAnswerCallback(ctx);
+  const user = await findByTelegram(ctx.from!.id);
+  if (!user) return;
+  const lang = langOf(user);
+  const rateeId = Number(ctx.match![1]);
+  const stars = Number(ctx.match![2]);
+  const { rateUser } = await import("../services/chatRating.js");
+  const res = await rateUser(user.id, rateeId, stars);
+  if (!res.ok) {
+    await ctx
+      .answerCallbackQuery({ text: tr(lang, "ثبت نشد", "Couldn't save") })
+      .catch(() => undefined);
+    return;
+  }
+  await ctx
+    .editMessageText(
+      res.updated
+        ? tr(lang, `امتیازت به ${stars}⭐ به‌روز شد. ممنون!`, `Your rating was updated to ${stars}⭐. Thanks!`)
+        : tr(lang, `ممنون! امتیاز ${stars}⭐ ثبت شد.`, `Thanks! Your ${stars}⭐ rating is saved.`),
+    )
+    .catch(() => undefined);
+});
+
 menuHandler.callbackQuery("chat:contact", async (ctx) => {
   await safeAnswerCallback(ctx);
   const user = await findByTelegram(ctx.from!.id);

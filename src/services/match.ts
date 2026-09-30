@@ -235,6 +235,13 @@ export async function leaveQueueOrChat(
                 : "از منو دوباره می‌توانی وصل شوی.",
               { reply_markup: mainKeyboard(partnerLang) },
             );
+            // پرامپت امتیازدهی به طرف مقابل (این کاربر) — ناشناس
+            try {
+              const { promptRating } = await import("./chatRating.js");
+              await promptRating(api, partner, user.id);
+            } catch {
+              /* ignore */
+            }
           } catch (err) {
             console.error("notify partner end-chat failed", partner.id, err);
           }
@@ -1337,4 +1344,11 @@ export async function offerWipeAfterEnd(
     reply_markup: wipeChatKeyboard(partnerUserId, lang),
   });
   await logChatMessage(user.id, partnerUserId, user.telegramId, m.message_id);
+  // پرامپت امتیازدهی به طرف مقابل — ناشناس
+  try {
+    const { promptRating } = await import("./chatRating.js");
+    await promptRating(api, user, partnerUserId);
+  } catch {
+    /* ignore */
+  }
 }

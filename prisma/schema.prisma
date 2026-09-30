@@ -82,6 +82,8 @@ model User {
   viewsCount        Int       @default(0)
   likesCount        Int       @default(0)
   chatsCount        Int       @default(0)
+  ratingSum         Int       @default(0)
+  ratingCount       Int       @default(0)
   lastActiveAt      DateTime  @default(now())
   /// آخرین دریافت سکه روزانه
   lastDailyCoinAt   DateTime?
@@ -424,3 +426,15 @@ model QuickMatchCharge {
   @@index([connectedAt])
 }
 
+
+model ChatRating {
+  id        Int      @id @default(autoincrement())
+  raterId   Int
+  rateeId   Int
+  stars     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([raterId, rateeId])
+  @@index([rateeId])
+}
