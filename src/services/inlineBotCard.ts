@@ -14,7 +14,7 @@ import {
 const SHORT_FA =
   "شبکه گفت‌وگو: چت خصوصی، کاربران نزدیک، پیام و ویس";
 const DESC_FA = [
-  "دوردوریا — شبکه گفت‌وگو و پیام‌رسانی اجتماعی",
+  "پاتوق — شبکه گفت‌وگو و پیام‌رسانی اجتماعی",
   "",
   "گفتگوی یک‌به‌یک با حفظ حریم خصوصی",
   "پیدا کردن کاربران نزدیک و هم‌استان",
@@ -43,7 +43,7 @@ function isFa(lang?: string | null): boolean {
 
 async function botTexts(api: Api, fa: boolean) {
   const lang = fa ? "fa" : "en";
-  let name = fa ? "دوردوریا | گفت‌وگو" : "Patogh | Chat";
+  let name = fa ? "پاتوق | گفت‌وگو" : "Patogh | Chat";
   let short = fa ? SHORT_FA : SHORT_EN;
   let description = fa ? DESC_FA : DESC_EN;
 
@@ -129,7 +129,7 @@ export async function answerInlineBotIntro(ctx: Context): Promise<boolean> {
   const text = messageBody({ fa, name, short, description, link });
 
   const kb = new InlineKeyboard()
-    .url(fa ? "🚀 شروع در دوردوریا" : "🚀 Start Patogh", link)
+    .url(fa ? "🚀 شروع در پاتوق" : "🚀 Start Patogh", link)
     .row()
     .url(
       fa ? "📤 اشتراک‌گذاری" : "📤 Share",
@@ -171,7 +171,7 @@ export async function answerInlineBotIntro(ctx: Context): Promise<boolean> {
       cache_time: 60,
       is_personal: true,
       button: {
-        text: fa ? "باز کردن دوردوریا" : "Open Patogh",
+        text: fa ? "باز کردن پاتوق" : "Open Patogh",
         start_parameter: "inline",
       },
     });
@@ -194,7 +194,7 @@ export async function answerInlineBotIntro(ctx: Context): Promise<boolean> {
       cache_time: 30,
       is_personal: true,
       button: {
-        text: fa ? "باز کردن دوردوریا" : "Open Patogh",
+        text: fa ? "باز کردن پاتوق" : "Open Patogh",
         start_parameter: "inline",
       },
     });

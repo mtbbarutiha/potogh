@@ -123,7 +123,7 @@ export async function sendBotShareCard(
 ): Promise<void> {
   const api = ctx.api;
   const me = await api.getMe();
-  let botName = me.first_name || (opts.lang === "en" ? "Patogh" : "دوردوریا");
+  let botName = me.first_name || (opts.lang === "en" ? "Patogh" : "پاتوق");
   try {
     const named = await api.getMyName({ language_code: opts.lang });
     if (named.name?.trim()) botName = named.name.trim();

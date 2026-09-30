@@ -99,7 +99,7 @@ function formatLaunchDashboard(
         ? "—"
         : `${formatNum(d.heartbeatAgeSec)}ث پیش (${d.heartbeatReason})`;
   return [
-    "📡 داشبورد لانچ دوردوریا",
+    "📡 داشبورد لانچ پاتوق",
     "",
     "—— کاربران ——",
     `👥 کل ثبت‌نام: ${formatNum(d.totalUsers)}`,
@@ -144,7 +144,7 @@ function adminHomeText(s: Awaited<ReturnType<typeof getRegistrationStats>>) {
   const upSec = getUptimeSec();
   const poll = getPollWatch();
   return [
-    "🛠 پنل ادمین دوردوریا",
+    "🛠 پنل ادمین پاتوق",
     `⏱ آپ‌تایم: ${up}`,
     `   (${upSec} ثانیه · pid ${process.pid})`,
     poll.pollOkCount > 0
@@ -704,7 +704,7 @@ adminHandler.callbackQuery("adm:giftall:cancel", async (ctx) => {
       [
         "❌ هدیه همگانی لغو شد.",
         "",
-        "🛠 پنل ادمین دوردوریا",
+        "🛠 پنل ادمین پاتوق",
       ].join("\n"),
       {
         reply_markup: adminPanelKeyboard(s.pendingPhotos, s.pendingFaces),
@@ -926,7 +926,7 @@ adminHandler.callbackQuery("adm:give:cancel", async (ctx) => {
     [
       "❌ افزودن سکه لغو شد.",
       "",
-      "🛠 پنل ادمین دوردوریا",
+      "🛠 پنل ادمین پاتوق",
       `📷 عکس pending: ${formatNum(s.pendingPhotos)}`,
       `✅ احراز pending: ${formatNum(s.pendingFaces)}`,
     ].join("\n"),
@@ -1118,7 +1118,7 @@ adminHandler.callbackQuery(/^adm:give:ok:(\d+):(\d+)$/, async (ctx) => {
       .sendMessage(
         Number(target.telegramId),
         [
-          "🎁 از طرف پشتیبانی دوردوریا",
+          "🎁 از طرف پشتیبانی پاتوق",
           `${formatNum(amount)} سکه به حسابت اضافه شد.`,
           `موجودی: ${formatNum(updated.diamonds)} 💰`,
         ].join("\n"),
@@ -1217,7 +1217,7 @@ async function cancelModerationFlow(
   const text = [
     `❌ ${label} لغو شد.`,
     "",
-    "🛠 پنل ادمین دوردوریا",
+    "🛠 پنل ادمین پاتوق",
     `📷 عکس pending: ${formatNum(s.pendingPhotos)}`,
     `✅ احراز pending: ${formatNum(s.pendingFaces)}`,
   ].join("\n");

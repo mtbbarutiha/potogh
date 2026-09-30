@@ -14,14 +14,22 @@ let lastInaccessibleLog = 0;
 
 export type MemberStatus = "member" | "not_member" | "unknown";
 
-/** @username یا لینک کانال */
+/**
+ * آیا عضویت اجباری فعال است؟ اگر FORCE_JOIN_CHANNEL تنظیم نشده باشد،
+ * گیت غیرفعال است تا کاربران بدون کانال گیر نکنند.
+ */
+export function forceJoinEnabled(): boolean {
+  return Boolean((process.env.FORCE_JOIN_CHANNEL ?? "").trim());
+}
+
+/** @username یا لینک کانال (فقط وقتی forceJoinEnabled() true است معنا دارد) */
 export function channelUsername(): string {
-  const raw = (process.env.FORCE_JOIN_CHANNEL ?? "@Patoghchatbot").trim();
+  const raw = (process.env.FORCE_JOIN_CHANNEL ?? "").trim();
   if (/^https?:\/\//i.test(raw)) {
     const m = raw.match(/t\.me\/([A-Za-z0-9_]+)/i);
-    return m ? `@${m[1]}` : "@Patoghchatbot";
+    return m ? `@${m[1]}` : raw;
   }
-  if (/^-?\d+$/.test(raw)) return "@Patoghchatbot";
+  if (/^-?\d+$/.test(raw)) return raw;
   return raw.startsWith("@") ? raw : `@${raw}`;
 }
 
@@ -220,6 +228,7 @@ export async function gateRegistrationJoin(
 ): Promise<boolean> {
   const telegramId = Number(user.telegramId);
   if (isAdmin(telegramId)) return true;
+  if (!forceJoinEnabled()) return true;
 
   const status = await checkChannelMember(ctx, telegramId);
   if (status === "member") return true;
@@ -314,7 +323,7 @@ forceJoinHandler.on("message", async (ctx, next) => {
       await ctx.reply(
         lang === "en"
           ? "That forward is not from our channel. Forward a post from the Patogh channel."
-          : "این فوروارد از کانال دوردوریا نیست. یک پست از کانال را فوروارد کن.",
+          : "این فوروارد از کانال پاتوق نیست. یک پست از کانال را فوروارد کن.",
         { reply_markup: joinKeyboard(lang) },
       );
       return;

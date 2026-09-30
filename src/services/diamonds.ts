@@ -266,7 +266,7 @@ export async function sendStarsInvoice(
     ctx.from ? await findByTelegram(ctx.from.id) : null,
   );
 
-  const title = tr(lang, `${pkg.label} — دوردوریا`, `${pkg.label} — Patogh`);
+  const title = tr(lang, `${pkg.label} — پاتوق`, `${pkg.label} — Patogh`);
   const description = tr(
     lang,
     `${formatNum(pkg.diamonds)} سکه به حسابت اضافه می‌شود.`,

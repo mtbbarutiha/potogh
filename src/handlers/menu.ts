@@ -301,7 +301,7 @@ menuHandler.hears(btnAll("STATS"), async (ctx) => {
           `• لایک: ${formatNum(user.likesCount)}`,
           `• چت‌ها: ${formatNum(user.chatsCount)}`,
           `• سکه: ${formatNum(user.diamonds)}`,
-          `کاربران دوردوریا: ${formatNum(totalUsers)}`,
+          `کاربران پاتوق: ${formatNum(totalUsers)}`,
         ].join("\n"),
   );
 });

@@ -88,7 +88,7 @@ export async function setupBotMenu(bot: Bot) {
     await bot.api.setChatMenuButton({
       menu_button: {
         type: "web_app",
-        text: "دوردوریا",
+        text: "پاتوق",
         web_app: { url: webAppUrl },
       },
     });

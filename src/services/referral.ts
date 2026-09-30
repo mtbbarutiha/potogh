@@ -11,7 +11,8 @@ import { REFERRAL_BONUS } from "../data/packages.js";
 export async function grantReferralBonusIfEligible(
   userId: number,
 ): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
+  try {
+    return await prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: {
@@ -72,6 +73,17 @@ export async function grantReferralBonusIfEligible(
       where: { id: referrerId, deletedAt: null },
       data: { diamonds: { increment: REFERRAL_BONUS } },
     });
-    return credited.count === 1;
-  });
+    // اگر معرف پیدا نشد/حذف شده، claim را با throw رول‌بک کن تا flag مصرف نشود
+    if (credited.count !== 1) {
+      throw new Error("REFERRER_MISSING");
+    }
+      return true;
+    });
+  } catch (err) {
+    // رول‌بک عمدی وقتی معرف حذف شده — flag مصرف نشده، بعداً قابل تلاش دوباره
+    if (err instanceof Error && err.message === "REFERRER_MISSING") {
+      return false;
+    }
+    throw err;
+  }
 }
