@@ -355,7 +355,22 @@ export async function initInlineThumbCache(): Promise<void> {
   await ensureGenderDefaultPublicUrl("female").catch(() => undefined);
   await ensureGenderDefaultPublicUrl("male").catch(() => undefined);
   await ensureGenderDefaultPublicUrl(null).catch(() => undefined);
+  // عکس‌های پیش‌فرض جنسیت را روی CDN هم آماده کن تا تلگرام در لیست نشانشان دهد
+  await ensureGenderDefaultCdnUrl("female").catch(() => undefined);
+  await ensureGenderDefaultCdnUrl("male").catch(() => undefined);
+  await ensureGenderDefaultCdnUrl(null).catch(() => undefined);
   if (n > 0) console.log(`[inline] thumb cache warmed: ${n} urls`);
+}
+
+/** عکس پیش‌فرض جنسیت را روی CDN آماده می‌کند (برای thumbnail لیست اینلاین) */
+async function ensureGenderDefaultCdnUrl(
+  gender: string | null | undefined,
+): Promise<void> {
+  const key = genderThumbKey(gender);
+  if (await getCachedCdnThumbUrl(key)) return;
+  const { defaultGenderThumbBuffer } = await import("../lib/faceBadgePhoto.js");
+  const buf = await defaultGenderThumbBuffer(gender, 128);
+  await ensureCdnThumbUrl(buf, key).catch(() => undefined);
 }
 
 async function uploadThumbBuffer(
@@ -452,31 +467,35 @@ async function cachedThumbOnly(u: RowUser): Promise<string | null> {
 /** ساخت و ذخیرهٔ thumbnail — با dedup */
 async function buildAndStoreThumb(api: Api, u: RowUser): Promise<string | null> {
   const hasPhoto = u.photoStatus === "approved" && Boolean(u.photoFileId);
-  if (!hasPhoto) return ensureGenderDefaultPublicUrl(u.gender);
-
   const cacheKey = cacheKeyFor(u);
   const existing = await cachedThumbOnly(u);
   if (existing) return existing;
 
   try {
-    const { listThumbBuffer } = await import("../lib/faceBadgePhoto.js");
-    const buf = await listThumbBuffer(
-      api,
-      {
-        gender: u.gender,
-        photoFileId: u.photoFileId,
-        photoStatus: u.photoStatus,
-        faceVerified: u.faceVerified,
-      },
-      128,
+    const { listThumbBuffer, defaultGenderThumbBuffer } = await import(
+      "../lib/faceBadgePhoto.js"
     );
+    // بدون عکس → عکس پیش‌فرض جنسیت؛ آن هم مثل عکس واقعی روی CDN آپلود می‌شود
+    // تا تلگرام نشانش دهد (به‌جای اول‌حرف رنگی پیش‌فرض خودِ تلگرام).
+    const buf = hasPhoto
+      ? await listThumbBuffer(
+          api,
+          {
+            gender: u.gender,
+            photoFileId: u.photoFileId,
+            photoStatus: u.photoStatus,
+            faceVerified: u.faceVerified,
+          },
+          128,
+        )
+      : await defaultGenderThumbBuffer(u.gender, 128);
     const url = await uploadThumbBuffer(buf, cacheKey, api);
     await ensureCdnThumbUrl(buf, cacheKey).catch(() => undefined);
     await ensureTelegramThumbFileId(api, cacheKey, buf).catch(() => undefined);
     return url;
   } catch (err) {
     console.error("[inline] buildAndStoreThumb failed", u.id, err);
-    return null;
+    return hasPhoto ? null : ensureGenderDefaultPublicUrl(u.gender);
   }
 }
 
