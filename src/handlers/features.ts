@@ -22,7 +22,7 @@ import {
   promptSearchGender,
   runSearchWithGender,
 } from "../services/explore.js";
-import { sendChatRequest, respondChatRequest, setQuickMatchPref, tryQuickMatch } from "../services/match.js";
+import { sendChatRequest, respondChatRequest, setQuickMatchPref, tryQuickMatch, promptQuickMatchGender } from "../services/match.js";
 import { saveLocation } from "../services/nearby.js";
 import { publicPhotoWithBadge } from "../lib/faceBadgePhoto.js";
 import {
@@ -60,6 +60,17 @@ featuresHandler.callbackQuery(/^quick:g:(female|male|any)$/, async (ctx) => {
     .editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } })
     .catch(() => undefined);
   await tryQuickMatch(ctx, user.id);
+});
+
+/** دکمه شیشه‌ای «شروع چت ناشناس» زیر پیام پین‌شده — مثل دکمه منوی وصل */
+featuresHandler.callbackQuery("quick:start", async (ctx) => {
+  const user = await requireRegistered(ctx);
+  if (!user) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  await promptQuickMatchGender(ctx, user.id);
 });
 
 featuresHandler.callbackQuery("quick:cancel", async (ctx) => {

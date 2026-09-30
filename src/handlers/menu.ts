@@ -202,8 +202,8 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
   if (user.boostUntil && user.boostUntil > new Date()) {
     await ctx.reply(
       lang === "en"
-        ? `Your boost is active until ${user.boostUntil.toLocaleString(locale)}`
-        : `شتاب‌دهی‌ات هنوز فعال است تا ${user.boostUntil.toLocaleString(locale)}`,
+        ? `💎 Your Pro subscription is active until ${user.boostUntil.toLocaleString(locale)}`
+        : `💎 اشتراک پرو تو فعال است تا ${user.boostUntil.toLocaleString(locale)}`,
     );
     return;
   }
@@ -211,16 +211,16 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
     await ctx.reply(
       lang === "en"
         ? [
-            "🚀 Boost",
+            "💎 Pro subscription",
             `Cost: ${formatNum(BOOST_COST)} coins for ${BOOST_HOURS} hours`,
             `Balance: ${formatNum(user.diamonds)} coins`,
-            `Not enough coins — buy from «${lang === "en" ? "💛 Coins" : "💛 سکه‌ها"}».`,
+            "Not enough coins — buy from «🪙 Coins».",
           ].join("\n")
         : [
-            "🚀 شتاب‌دهی",
+            "💎 اشتراک پرو",
             `هزینه: ${formatNum(BOOST_COST)} سکه برای ${BOOST_HOURS} ساعت`,
             `موجودی: ${formatNum(user.diamonds)} سکه`,
-            "سکه کافی نیست — از «💛 سکه‌ها» بخر.",
+            "سکه کافی نیست — از «🪙 سکه» بخر.",
           ].join("\n"),
     );
     return;

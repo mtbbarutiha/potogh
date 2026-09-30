@@ -1,4 +1,4 @@
-import type { Api, Context } from "grammy";
+import { InlineKeyboard, type Api, type Context } from "grammy";
 import type { User } from "@prisma/client";
 import { prisma } from "../db/prisma.js";
 import { ensureUser, patchUser } from "../db/users.js";
@@ -256,7 +256,47 @@ export async function restoreUserSession(
   await ctx.reply(t(lang, "welcome_back"), {
     reply_markup: mainKeyboard(lang),
   });
+  await sendPinnedQuickStart(ctx, lang);
   return fresh;
+}
+
+/** پیام جذاب «شروع چت ناشناس» با دکمه شیشه‌ای + پین در چت ربات */
+export async function sendPinnedQuickStart(
+  ctx: Context,
+  lang: string,
+): Promise<void> {
+  const chatId = ctx.chat?.id;
+  if (chatId == null) return;
+  const en = lang === "en";
+  const text = en
+    ? [
+        "🎲 Ready to meet someone new?",
+        "",
+        "Tap «🎲 Start anonymous chat», connect to a stranger,",
+        "chat freely — and get a free coin as a welcome gift 🎁",
+        "👇",
+      ].join("\n")
+    : [
+        "🎲 آماده‌ای یکی جدید رو ببینی؟",
+        "",
+        "دکمه «🎲 شروع چت ناشناس» رو بزن، به یه ناشناس وصل شو،",
+        "راحت گپ بزن — و یک سکه رایگان هدیه بگیر 🎁",
+        "👇",
+      ].join("\n");
+  const kb = new InlineKeyboard().text(
+    en ? "🎲 Start anonymous chat" : "🎲 شروع چت ناشناس",
+    "quick:start",
+  );
+  try {
+    // پین قبلی را بردار تا فقط یک پیام پین‌شده بماند
+    await ctx.api.unpinAllChatMessages(chatId).catch(() => undefined);
+    const msg = await ctx.api.sendMessage(chatId, text, { reply_markup: kb });
+    await ctx.api
+      .pinChatMessage(chatId, msg.message_id, { disable_notification: true })
+      .catch(() => undefined);
+  } catch {
+    /* پین در چت خصوصی ممکن است اجازه نداشته باشد — بی‌خطر رد شو */
+  }
 }
 
 /** touch کاربر در هر آپدیت — lastActiveAt و پروفایل تلگرام */

@@ -6,7 +6,7 @@ import {
   coinsShopKeyboard,
   searchPanelKeyboard,
 } from "../keyboards/main.js";
-import { langOf, t, tr, btnAll } from "../i18n/index.js";
+import { langOf, t, tr } from "../i18n/index.js";
 import { sendProfileCard } from "../services/profile.js";
 import { promptQuickMatchGender } from "../services/match.js";
 import { patchUser, ensureUserCode } from "../db/users.js";
@@ -270,8 +270,8 @@ async function runBoost(ctx: Context) {
   if (user.boostUntil && user.boostUntil > new Date()) {
     await ctx.reply(
       lang === "en"
-        ? `⚡ Boost active until ${user.boostUntil.toLocaleString(locale)}`
-        : `⚡ شتاب‌دهی فعال تا ${user.boostUntil.toLocaleString(locale)}`,
+        ? `💎 Pro subscription active until ${user.boostUntil.toLocaleString(locale)}`
+        : `💎 اشتراک پرو فعال تا ${user.boostUntil.toLocaleString(locale)}`,
     );
     return;
   }
@@ -302,7 +302,6 @@ async function runBoost(ctx: Context) {
 }
 
 commandsHandler.command("boost", runBoost);
-commandsHandler.hears(btnAll("BOOST"), runBoost);
 
 commandsHandler.command("stats", async (ctx) => {
   const user = await requireRegistered(ctx);

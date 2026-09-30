@@ -12,7 +12,7 @@ export const FA_COMMANDS: BotCommand[] = [
   { command: "profile", description: "👤 پروفایل" },
   { command: "diamonds", description: "💰 سکه" },
   { command: "anon", description: "🎭 لینک ناشناس من" },
-  { command: "boost", description: "🚀 شارتاک پرو" },
+  { command: "boost", description: "💎 اشتراک پرو" },
   { command: "stats", description: "📊 آمار" },
 ];
 
@@ -24,7 +24,7 @@ export const EN_COMMANDS: BotCommand[] = [
   { command: "profile", description: "👤 Profile" },
   { command: "diamonds", description: "💰 Coins" },
   { command: "anon", description: "🎭 My anonymous link" },
-  { command: "boost", description: "🚀 Shartak Pro" },
+  { command: "boost", description: "💎 Pro subscription" },
   { command: "stats", description: "📊 Stats" },
 ];
 
