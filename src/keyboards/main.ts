@@ -66,9 +66,9 @@ export function mainKeyboard(lang: Lang | string | null = "fa") {
     .text(btn(L, "GUIDE"))
     .row()
     .text(btn(L, "EARN"), "primary")
-    .text(btn(L, "DIAMONDS"))
+    .text(btn(L, "DIAMONDS"), "primary")
     .row()
-    .text(btn(L, "ANON_LINK"), "primary")
+    .text(btn(L, "ANON_LINK"))
     .text(btn(L, "REFERRAL"))
     .resized();
 }
