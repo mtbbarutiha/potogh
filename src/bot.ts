@@ -109,13 +109,21 @@ async function nativeFetch(
 ): Promise<Response> {
   const url = String(input);
   if (url.includes("/getUpdates")) {
+    // سیگنال grammy در Node/undici جدید AbortSignal بومی نیست؛ فقط از timeout
+    // بومی استفاده می‌کنیم (لغو والد را installApiDebug جدا مدیریت می‌کند).
     const hard = AbortSignal.timeout(GETUPDATES_HARD_MS);
-    const parent = init?.signal;
-    const signal =
-      parent && typeof AbortSignal.any === "function"
-        ? AbortSignal.any([parent, hard])
-        : hard;
-    return globalThis.fetch(input, { ...init, signal });
+    const { signal: _drop, ...rest } = init ?? {};
+    return globalThis.fetch(input, { ...rest, signal: hard });
+  }
+  // برای بقیه‌ی متدها: سیگنال grammy در Node/undici جدید یک AbortSignal بومی
+  // نیست و رد می‌شود («signals[0] is not of type AbortSignal»). آن را با یک
+  // timeout بومی جایگزین می‌کنیم تا درخواست‌ها معلق نمانند.
+  if (init && "signal" in init) {
+    const { signal: _drop, ...rest } = init;
+    return globalThis.fetch(input, {
+      ...rest,
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT_SEC * 1000 + 5000),
+    });
   }
   return globalThis.fetch(input, init);
 }
