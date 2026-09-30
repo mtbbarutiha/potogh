@@ -245,47 +245,6 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
   );
 });
 
-menuHandler.hears(btnAll("PRO"), async (ctx) => {
-  const user = await requireRegistered(ctx);
-  if (!user) return;
-  if (await blockIfChatting(ctx, user)) return;
-  const lang = langOf(user);
-  if (user.isPro) {
-    await ctx.reply(
-      lang === "en" ? "Pro subscription is active 🅿️" : "اشتراک پرو تو فعال است 🅿️",
-    );
-    return;
-  }
-  const cost = 200;
-  await ctx.reply(
-    lang === "en"
-      ? [
-          "🅿️ Pro subscription",
-          "• More visibility",
-          "• Pro badge",
-          "• Quick chat priority",
-          "",
-          `Cost: ${formatNum(cost)} coins | Balance: ${formatNum(user.diamonds)}`,
-        ].join("\n")
-      : [
-          "🅿️ اشتراک پرو",
-          "• دیده شدن بیشتر",
-          "• نشان پرو",
-          "• اولویت چت سریع",
-          "",
-          `هزینه: ${formatNum(cost)} سکه | موجودی: ${formatNum(user.diamonds)}`,
-        ].join("\n"),
-    {
-      reply_markup: new InlineKeyboard().text(
-        lang === "en"
-          ? `✅ Activate Pro (${formatNum(cost)}💰)`
-          : `✅ فعال‌سازی پرو (${formatNum(cost)}💰)`,
-        "pro:buy",
-      ),
-    },
-  );
-});
-
 menuHandler.hears(btnAll("STATS"), async (ctx) => {
   const user = await requireRegistered(ctx);
   if (!user) return;

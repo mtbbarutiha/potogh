@@ -721,26 +721,6 @@ featuresHandler.callbackQuery("search:recent", async (ctx) => {
   );
 });
 
-featuresHandler.callbackQuery("pro:buy", async (ctx) => {
-  const user = await requireRegistered(ctx);
-  if (!user) {
-    await ctx.answerCallbackQuery();
-    return;
-  }
-  const cost = 200;
-  const { debitCoins } = await import("../services/coins.js");
-  const ok = await debitCoins(user.id, cost);
-  if (!ok) {
-    await ctx.answerCallbackQuery({ text: "سکه کافی نیست" });
-    return;
-  }
-  await patchUser(user.id, { isPro: true });
-  await ctx.answerCallbackQuery({ text: "پرو فعال شد" });
-  await ctx.reply("🅿️ اشتراک پرو فعال شد!", {
-    reply_markup: mainKeyboard(),
-  });
-});
-
 /** ❤️ {count} — اگر لایک نشده لایک می‌کند؛ اگر قبلاً لایک شده تعداد را نشان می‌دهد */
 featuresHandler.callbackQuery(/^exp:likes?:(\d+)$/, async (ctx) => {
   const user = await requireRegistered(ctx);

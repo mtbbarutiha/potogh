@@ -23,7 +23,6 @@ export type BtnKey =
   | "SECURE_CHAT_OFF"
   | "SEND_LOCATION"
   | "BOOST"
-  | "PRO"
   | "STATS"
   | "CARD_SEND_RECEIPT"
   | "CARD_CANCEL_PAY";
@@ -38,7 +37,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     DIAMONDS: "سکه 🪙",
     EARN: "کسب درآمد 💵",
     ANON_LINK: "لینک ناشناس من 🎭",
-    REFERRAL: "معرفی به دوستان (سکه رایگان) 🎁",
+    REFERRAL: "دوستت و بیار سکه رایگان بگیر 🎁",
     GUIDE: "راهنما 📖",
     BACK: "↩️ بازگشت به منو",
     CANCEL_WAIT: "❌ لغو جستجو",
@@ -48,8 +47,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     SECURE_CHAT_ON: "🔒 چت امن",
     SECURE_CHAT_OFF: "🔓 خاموش کردن چت امن",
     SEND_LOCATION: "📍 ارسال موقعیت",
-    BOOST: "شتاب‌دهی 🚀",
-    PRO: "اشتراک پرو 💎",
+    BOOST: "شارتاک پرو 🚀",
     STATS: "آمار 📊",
     CARD_SEND_RECEIPT: "📸 ارسال رسید پرداخت",
     CARD_CANCEL_PAY: "❌ انصراف از پرداخت",
@@ -62,7 +60,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     DIAMONDS: "Coins 🪙",
     EARN: "Earn money 💵",
     ANON_LINK: "My anonymous link 🎭",
-    REFERRAL: "Invite friends (free coins) 🎁",
+    REFERRAL: "Bring a friend, get free coins 🎁",
     GUIDE: "Guide 📖",
     BACK: "↩️ Back to menu",
     CANCEL_WAIT: "❌ Cancel search",
@@ -72,8 +70,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
     SECURE_CHAT_ON: "🔒 Secure chat",
     SECURE_CHAT_OFF: "🔓 Turn off secure chat",
     SEND_LOCATION: "📍 Send location",
-    BOOST: "Boost 🚀",
-    PRO: "Pro membership 💎",
+    BOOST: "Shartak Pro 🚀",
     STATS: "Stats 📊",
     CARD_SEND_RECEIPT: "📸 Send payment receipt",
     CARD_CANCEL_PAY: "❌ Cancel payment",

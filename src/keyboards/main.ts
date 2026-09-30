@@ -65,7 +65,7 @@ export function mainKeyboard(lang: Lang | string | null = "fa") {
     .text(btn(L, "PROFILE"))
     .text(btn(L, "DIAMONDS"))
     .row()
-    .text(btn(L, "EARN"))
+    .text(btn(L, "EARN"), "primary")
     .text(btn(L, "ANON_LINK"), "primary")
     .row()
     .text(btn(L, "GUIDE"))

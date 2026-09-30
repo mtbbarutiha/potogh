@@ -304,41 +304,6 @@ async function runBoost(ctx: Context) {
 commandsHandler.command("boost", runBoost);
 commandsHandler.hears(btnAll("BOOST"), runBoost);
 
-commandsHandler.command("pro", async (ctx) => {
-  const user = await requireRegistered(ctx);
-  if (!user) return;
-  const lang = langOf(user);
-  if (user.state === "chatting") {
-    await ctx.reply(
-      lang === "en"
-        ? "You're in a chat. End it first (/end)."
-        : "الان در چت هستی. اول قطع کن (/end).",
-      { reply_markup: chattingKeyboard(user.secureChat, lang) },
-    );
-    return;
-  }
-  if (user.isPro) {
-    await ctx.reply(
-      lang === "en" ? "Pro is active 🅿️" : "پرو فعال است 🅿️",
-    );
-    return;
-  }
-  const cost = 200;
-  await ctx.reply(
-    lang === "en"
-      ? `🅿️ Pro — cost ${formatNum(cost)} coins\nBalance: ${formatNum(user.diamonds)}`
-      : `🅿️ پرو — هزینه ${formatNum(cost)} سکه\nموجودی: ${formatNum(user.diamonds)}`,
-    {
-      reply_markup: new InlineKeyboard().text(
-        lang === "en"
-          ? `Activate (${formatNum(cost)}💰)`
-          : `فعال‌سازی (${formatNum(cost)}💰)`,
-        "pro:buy",
-      ),
-    },
-  );
-});
-
 commandsHandler.command("stats", async (ctx) => {
   const user = await requireRegistered(ctx);
   if (!user) return;

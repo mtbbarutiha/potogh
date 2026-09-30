@@ -677,7 +677,6 @@ export async function showProfileByUserCode(
     `┃ 👁 ${formatNum(viewsShown)}`,
     `┃ ${distanceLine}`,
     `┃ ${onlineStatus(candidate)}`,
-    candidate.isPro ? "┃ 🅿️ پرو" : null,
     "┗━━━━━━━━━━━━┛",
   ]
     .filter(Boolean)
