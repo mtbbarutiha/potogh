@@ -224,20 +224,28 @@ export async function checkChannelMember(
     return cached.ok ? "member" : "not_member";
   }
 
+  let sawMember = false;
   let sawUnknown = false;
   for (const channel of channels) {
     const status = await checkOneChannel(ctx, channel, userId);
+    // در کانال قابل‌بررسی عضو نیست → قطعاً بلاک
     if (status === "not_member") {
       memberCache.set(userId, { ok: false, at: Date.now() });
       return "not_member";
     }
+    if (status === "member") sawMember = true;
     if (status === "unknown") sawUnknown = true;
   }
 
-  if (sawUnknown) return "unknown";
+  // عضو همه‌ی کانال‌های قابل‌بررسی است (کانال‌هایی که ربات ادمین‌شان نیست
+  // قابل‌کنترل نیستند و نباید کاربر را گیر بیندازند)
+  if (sawMember) {
+    memberCache.set(userId, { ok: true, at: Date.now() });
+    return "member";
+  }
 
-  memberCache.set(userId, { ok: true, at: Date.now() });
-  return "member";
+  // هیچ کانالی قابل‌بررسی نبود
+  return sawUnknown ? "unknown" : "member";
 }
 
 /** آیا پیام فوروارد از یکی از کانال‌های اجباری است؟ */
