@@ -272,19 +272,17 @@ export async function sendPinnedQuickStart(
   const en = lang === "en";
   const text = en
     ? [
-        "🎲 Ready to meet someone new?",
-        "",
-        "Tap «🎲 Start anonymous chat», connect to a stranger,",
-        "chat freely — and get a free coin as a welcome gift 🎁",
+        "🎲 Start chatting now!",
+        "Connect to a stranger, chat, and get a free coin as a gift 🎁",
         "👇",
       ].join("\n")
     : [
-        "همین الان برای شروع چت به‌صورت ناشناس، دکمه «🎲 شروع چت ناشناس» رو بزن،",
+        "🎲 همین الان چت کن!",
         "به یه ناشناس وصل شو، گپ بزن و یک سکه رایگان هدیه بگیر 🎁",
         "👇",
       ].join("\n");
   const kb = new InlineKeyboard().text(
-    en ? "🎲 Start anonymous chat" : "🎲 شروع چت ناشناس",
+    en ? "🎲 Anonymous chat" : "🎲 چت ناشناس",
     "quick:start",
   );
   try {
