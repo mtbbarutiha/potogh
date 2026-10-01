@@ -341,7 +341,8 @@ async function main() {
         }
       } catch (err) {
         noteApiError(err);
-        logger.error("health.check_failed", { err: errMessage(err) });
+        // قطعی گذرای شبکه در health-check باعث ری‌استارت نمی‌شود → warn، نه error
+        logger.warn("health.check_failed", { err: errMessage(err) });
       }
     })();
   }, 5_000);

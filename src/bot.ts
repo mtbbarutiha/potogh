@@ -98,6 +98,15 @@ function retryAfterMs(err: unknown): number | null {
   return null;
 }
 
+/** خطای شبکه‌ایِ گذرا (قطعی کوتاه سرور↔تلگرام) که با retry نرم ترمیم می‌شود */
+function isTransientNetErr(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    /fetch failed|network request for|socket hang up|und_err|other side closed/.test(msg) ||
+    /etimedout|econnreset|econnrefused|enotfound|eai_again|ehostunreach|enetunreach|epipe/.test(msg)
+  );
+}
+
 async function sleep(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
 }
@@ -208,6 +217,18 @@ function installApiDebug(bot: Bot) {
               waitMs: wait,
             });
             await sleep(wait);
+            continue;
+          }
+          // retry نرم برای قطعی‌های کوتاه شبکه (backoff: 400ms, 800ms, 1600ms)
+          if (isTransientNetErr(err) && attempt < 3) {
+            const backoff = 400 * 2 ** attempt;
+            logger.warn("api.net_retry", {
+              method,
+              attempt: attempt + 1,
+              waitMs: backoff,
+              err: errText(err),
+            });
+            await sleep(backoff);
             continue;
           }
           throw err;
