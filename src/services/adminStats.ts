@@ -64,8 +64,10 @@ export async function getTodayRegistrationByGender() {
 
 export async function getRegistrationStats() {
   const now = new Date();
-  const monthStart = startOfMonth(now.getFullYear(), now.getMonth());
-  const threeMonths = startOfMonth(now.getFullYear(), now.getMonth() - 2);
+  // ماه شمسی جاری (نه میلادی) تا آمار «این ماه» درست باشد
+  const monthStart = tehranJalaliMonthStart(now);
+  // ۳ ماه اخیر = پنجره‌ی ۹۰ روزه‌ی چرخشی
+  const threeMonths = new Date(tehranTodayStart(now).getTime() - 90 * 86_400_000);
   const todayStart = tehranTodayStart();
 
   const [
@@ -525,4 +527,114 @@ export async function getTopCoinUsers(limit = 15) {
       telegramId: true,
     },
   });
+}
+
+/** شروع ماه شمسی جاری (نیمه‌شب تهران) با تقویم فارسیِ Intl */
+export function tehranJalaliMonthStart(now = new Date()): Date {
+  const day = Number(
+    new Intl.DateTimeFormat("en-US-u-ca-persian", {
+      timeZone: "Asia/Tehran",
+      day: "numeric",
+    }).format(now),
+  );
+  const todayStart = tehranTodayStart(now);
+  return new Date(todayStart.getTime() - (day - 1) * 86_400_000);
+}
+
+/** نام ماه شمسی جاری */
+export function jalaliMonthName(now = new Date()): string {
+  return new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+    timeZone: "Asia/Tehran",
+    month: "long",
+  }).format(now);
+}
+
+/** گزارش مدیریتی جامع برای خانه‌ی پنل */
+export async function getManagerReport() {
+  const now = new Date();
+  const todayStart = tehranTodayStart(now);
+  const yStart = new Date(todayStart.getTime() - 86_400_000);
+  const weekStart = new Date(todayStart.getTime() - 7 * 86_400_000);
+  const jMonthStart = tehranJalaliMonthStart(now);
+  const reg = { registered: true, deletedAt: null } as const;
+
+  const [
+    total,
+    active,
+    today,
+    todayF,
+    todayM,
+    yesterday,
+    week,
+    jMonth,
+    female,
+    male,
+    pendingPhotos,
+    pendingFaces,
+    openSells,
+    chatting,
+    queue,
+    spentTodayAgg,
+    purchasedTodayAgg,
+    revenueAllAgg,
+  ] = await Promise.all([
+    prisma.user.count({ where: reg }),
+    prisma.user.count({ where: { ...reg, isActive: true } }),
+    prisma.user.count({ where: { ...reg, createdAt: { gte: todayStart } } }),
+    prisma.user.count({
+      where: { ...reg, gender: "female", createdAt: { gte: todayStart } },
+    }),
+    prisma.user.count({
+      where: { ...reg, gender: "male", createdAt: { gte: todayStart } },
+    }),
+    prisma.user.count({
+      where: { ...reg, createdAt: { gte: yStart, lt: todayStart } },
+    }),
+    prisma.user.count({ where: { ...reg, createdAt: { gte: weekStart } } }),
+    prisma.user.count({ where: { ...reg, createdAt: { gte: jMonthStart } } }),
+    prisma.user.count({ where: { ...reg, gender: "female" } }),
+    prisma.user.count({ where: { ...reg, gender: "male" } }),
+    prisma.user.count({ where: { photoStatus: "pending", deletedAt: null } }),
+    prisma.user.count({ where: { faceStatus: "pending", deletedAt: null } }),
+    prisma.coinSellRequest.count({ where: { status: "open" } }),
+    prisma.user.count({
+      where: { state: "chatting", chatPartnerId: { not: null }, deletedAt: null },
+    }),
+    prisma.user.count({ where: { state: "waiting", deletedAt: null } }),
+    prisma.coinLedger.aggregate({
+      where: { delta: { lt: 0 }, createdAt: { gte: todayStart } },
+      _sum: { delta: true },
+    }),
+    prisma.coinLedger.aggregate({
+      where: { reason: "purchase", createdAt: { gte: todayStart } },
+      _sum: { delta: true },
+    }),
+    prisma.diamondOrder.aggregate({
+      where: { status: "paid" },
+      _sum: { amountToman: true },
+    }),
+  ]);
+
+  return {
+    monthName: jalaliMonthName(now),
+    total,
+    active,
+    today,
+    todayF,
+    todayM,
+    yesterday,
+    week,
+    jMonth,
+    female,
+    male,
+    pendingPhotos,
+    pendingFaces,
+    openSells,
+    chattingPairs: Math.floor(chatting / 2),
+    chatting,
+    queue,
+    spentToday: Math.abs(spentTodayAgg._sum.delta ?? 0),
+    purchasedToday: purchasedTodayAgg._sum.delta ?? 0,
+    revenueAllToman: revenueAllAgg._sum.amountToman ?? 0,
+  };
 }

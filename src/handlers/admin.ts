@@ -11,6 +11,7 @@ import {
   listPendingFaces,
   getCoinUsageReport,
   getTopCoinUsers,
+  getManagerReport,
 } from "../services/adminStats.js";
 import { formatNum, formatToman } from "../data/packages.js";
 import { formatAdminUserLine } from "../services/account.js";
@@ -194,41 +195,29 @@ function formatLaunchDashboard(
   ].join("\n");
 }
 
-function adminHomeText(s: Awaited<ReturnType<typeof getRegistrationStats>>) {
-  const up = formatUptime();
-  const upSec = getUptimeSec();
-  const poll = getPollWatch();
+function adminHomeText(m: Awaited<ReturnType<typeof getManagerReport>>) {
   return [
-    "🛠 پنل ادمین پاتوق",
-    `⏱ آپ‌تایم: ${up}`,
-    `   (${upSec} ثانیه · pid ${process.pid})`,
-    poll.pollOkCount > 0
-      ? `📡 poll ok=${poll.pollOkCount} fail=${poll.pollFailCount}`
-      : null,
-    "",
-    "—— صف تایید ——",
-    `📷 عکس‌های در انتظار تایید: ${formatNum(s.pendingPhotos)}`,
-    `✅ پروفایل‌های در انتظار احراز: ${formatNum(s.pendingFaces)}`,
-    "",
-    "💰 افزودن سکه به یک کاربر یا هدیه همگانی از دکمه‌های پایین",
-    "📡 داشبورد لانچ: کاربران زنده · اقتصاد · سلامت · فورس‌جوین",
-    "",
-    `👥 ثبت‌نام‌شده فعال: ${formatNum(s.totalActive)}`,
-    `👩 دختر: ${formatNum(s.registeredFemale)}`,
-    `👨 پسر: ${formatNum(s.registeredMale)}`,
-    s.registeredOtherGender > 0
-      ? `❔ بدون جنسیت/سایر: ${formatNum(s.registeredOtherGender)}`
-      : null,
-    `📅 ثبت‌نام امروز: ${formatNum(s.registeredToday)}`,
-    `   👩 دختر: ${formatNum(s.registeredTodayFemale)} · 👨 پسر: ${formatNum(s.registeredTodayMale)}`,
-    s.registeredTodayOther > 0
-      ? `   ❔ بدون جنسیت: ${formatNum(s.registeredTodayOther)}`
-      : null,
-    "",
-    "یک گزینه را انتخاب کن:",
-  ]
-    .filter((x) => x != null)
-    .join("\n");
+    "📊 گزارش مدیریتی پاتوق",
+    `🗓 ${m.monthName} · ⏱ ${formatUptime()}`,
+    "━━━━━━━━━━━━",
+    "👥 کاربران",
+    `• کل: ${formatNum(m.total)} (فعال ${formatNum(m.active)})`,
+    `• 👩 ${formatNum(m.female)} · 👨 ${formatNum(m.male)}`,
+    `• امروز: ${formatNum(m.today)} (👩${formatNum(m.todayF)}·👨${formatNum(m.todayM)})`,
+    `• دیروز: ${formatNum(m.yesterday)} · ۷ روز: ${formatNum(m.week)}`,
+    `• این ماه (${m.monthName}): ${formatNum(m.jMonth)}`,
+    "━━━━━━━━━━━━",
+    "💬 فعالیت الان",
+    `• در حال چت: ${formatNum(m.chattingPairs)} جفت (${formatNum(m.chatting)} نفر)`,
+    `• صف چت سریع: ${formatNum(m.queue)}`,
+    "━━━━━━━━━━━━",
+    "💰 اقتصاد سکه (امروز)",
+    `• خرج‌شده: ${formatNum(m.spentToday)} سکه`,
+    `• خریداری‌شده: ${formatNum(m.purchasedToday)} سکه`,
+    `• کل درآمد پرداختی: ${formatToman(m.revenueAllToman)}`,
+    "━━━━━━━━━━━━",
+    `⏳ در انتظار: 📷 ${formatNum(m.pendingPhotos)} عکس · ✅ ${formatNum(m.pendingFaces)} احراز · 💵 ${formatNum(m.openSells)} فروش`,
+  ].join("\n");
 }
 
 adminHandler.command("admin", async (ctx) => {
@@ -236,9 +225,9 @@ adminHandler.command("admin", async (ctx) => {
     await ctx.reply("دسترسی ادمین نداری.");
     return;
   }
-  const s = await getRegistrationStats();
-  await ctx.reply(adminHomeText(s), {
-    reply_markup: adminPanelKeyboard(s.pendingPhotos, s.pendingFaces),
+  const m = await getManagerReport();
+  await ctx.reply(adminHomeText(m), {
+    reply_markup: adminPanelKeyboard(m.pendingPhotos, m.pendingFaces),
   });
 });
 
@@ -300,14 +289,14 @@ adminHandler.callbackQuery(/^adm:home$/, async (ctx) => {
     await ctx.answerCallbackQuery({ text: "غیرمجاز" });
     return;
   }
-  const s = await getRegistrationStats();
+  const m = await getManagerReport();
   await ctx.answerCallbackQuery();
-  const text = adminHomeText(s);
+  const text = adminHomeText(m);
   await ctx.editMessageText(text, {
-    reply_markup: adminPanelKeyboard(s.pendingPhotos, s.pendingFaces),
+    reply_markup: adminPanelKeyboard(m.pendingPhotos, m.pendingFaces),
   }).catch(async () => {
     await ctx.reply(text, {
-      reply_markup: adminPanelKeyboard(s.pendingPhotos, s.pendingFaces),
+      reply_markup: adminPanelKeyboard(m.pendingPhotos, m.pendingFaces),
     });
   });
 });
