@@ -19,3 +19,9 @@ assets/banners/channel-posts/earn-teaser-pro/clips/
 assets/banners/channel-posts/earn-teaser-pro/video_silent.mp4
 assets/banners/channel-posts/earn-teaser-pro/frames/
 assets/banners/channel-posts/earn-teaser-pro/audio/*.mp3
+
+logs/
+data/public-thumbs/
+data/thumb-index.json
+prisma/dev.db*
+dev.db*
