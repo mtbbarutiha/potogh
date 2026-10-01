@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { Api, Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { patchUser, findByTelegram } from "../db/users.js";
 import { DIAMOND_PACKAGES } from "../data/packages.js";
 import { getAdminIds } from "../lib/admin.js";
@@ -116,6 +117,7 @@ async function creditPaidOrder(
       where: { id: order.userId },
       data: { diamonds: { increment: order.diamonds }, state: "idle" },
     });
+    await recordCoin(order.userId, order.diamonds, "purchase", tx);
     return tx.diamondOrder.findUnique({ where: { id: orderId } });
   });
 }

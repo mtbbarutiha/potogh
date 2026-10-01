@@ -1,5 +1,6 @@
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer, InlineKeyboard, type Context } from "grammy";
 import { isAdmin } from "../lib/admin.js";
+import { prisma } from "../db/prisma.js";
 import {
   getRegistrationStats,
   getRevenueStats,
@@ -8,6 +9,8 @@ import {
   checkForceJoinHealth,
   listPendingPhotos,
   listPendingFaces,
+  getCoinUsageReport,
+  getTopCoinUsers,
 } from "../services/adminStats.js";
 import { formatNum, formatToman } from "../data/packages.js";
 import { formatAdminUserLine } from "../services/account.js";
@@ -41,51 +44,103 @@ function adminOnly(ctx: { from?: { id: number } | undefined }) {
   return ctx.from && isAdmin(ctx.from.id);
 }
 
+/** خانه‌ی پنل — ۵ دسته‌ی منسجم */
 export function adminPanelKeyboard(pendingPhotos: number, pendingFaces: number) {
+  const pend = pendingPhotos + pendingFaces;
   return new InlineKeyboard()
-    .text("📡 داشبورد لانچ", "adm:launch")
-    .primary()
+    .text(
+      pend > 0 ? `🛡 تأیید و احراز (${formatNum(pend)})` : "🛡 تأیید و احراز",
+      "adm:cat:approve",
+    )
     .row()
-    .text(`📷 عکس‌های در انتظار تایید (${formatNum(pendingPhotos)})`, "adm:photos")
+    .text("💰 اقتصاد سکه", "adm:cat:coins")
     .row()
-    .text(`✅ پروفایل‌های در انتظار احراز (${formatNum(pendingFaces)})`, "adm:faces")
+    .text("👮 مدیریت کاربر", "adm:cat:users")
     .row()
-    .text("📊 گزارش چت فعال", "adm:chats")
-    .primary()
+    .text("📊 آمار و لانچ", "adm:cat:stats")
     .row()
-    .text("🚩 گزارش تخلفات", "adm:reports")
-    .danger()
+    .text("⚙️ سیستم", "adm:cat:sys")
     .row()
-    .text("💵 فروش سکه / تسویه", "adm:sells")
+    .text("🔄 بروزرسانی", "adm:home");
+}
+
+/** زیرمنو: تأیید و احراز */
+export function adminCatApproveKb(pendingPhotos: number, pendingFaces: number) {
+  return new InlineKeyboard()
+    .text(`📷 عکس‌های در انتظار (${formatNum(pendingPhotos)})`, "adm:photos")
     .row()
-    .text("💰 افزودن سکه به کاربر", "adm:givecoins")
+    .text(`✅ احراز هویت در انتظار (${formatNum(pendingFaces)})`, "adm:faces")
     .row()
     .text("🗑 حذف عکس کاربر", "adm:clearphoto")
     .danger()
     .row()
-    .text("🚫 مسدود کردن کاربر", "adm:ban")
+    .text("⬅️ بازگشت", "adm:home");
+}
+
+/** زیرمنو: اقتصاد سکه */
+export function adminCatCoinsKb() {
+  return new InlineKeyboard()
+    .text("💰 افزودن سکه به کاربر", "adm:givecoins")
+    .row()
+    .text("🎁 هدیه سکه به همه", "adm:giftall")
+    .success()
+    .row()
+    .text("🎟 مدیریت ووچر", "adm:vouchers")
+    .row()
+    .text("💵 فروش سکه / تسویه", "adm:sells")
+    .row()
+    .text("💵 درآمد فروش", "adm:revenue")
+    .primary()
+    .text("📊 مصرف سکه", "adm:coinusage")
+    .row()
+    .text("🏆 بیشترین موجودی سکه", "adm:topcoins")
+    .row()
+    .text("⬅️ بازگشت", "adm:home");
+}
+
+/** زیرمنو: مدیریت کاربر */
+export function adminCatUsersKb() {
+  return new InlineKeyboard()
+    .text("🚫 مسدود کردن", "adm:ban")
     .danger()
     .text("✅ رفع مسدودیت", "adm:unban")
     .success()
     .row()
-    .text("🎟 مدیریت ووچر (کد هدیه)", "adm:vouchers")
+    .text("👥 خلاصه کاربران", "adm:overview")
     .row()
-    .text("🎁 هدیه سکه به همه کاربران", "adm:giftall")
-    .success()
+    .text("🚩 گزارش تخلفات", "adm:reports")
+    .danger()
     .row()
-    .text("💵 درآمد فروش سکه", "adm:revenue")
+    .text("📊 گزارش چت فعال", "adm:chats")
+    .primary()
+    .row()
+    .text("⬅️ بازگشت", "adm:home");
+}
+
+/** زیرمنو: آمار و لانچ */
+export function adminCatStatsKb() {
+  return new InlineKeyboard()
+    .text("📡 داشبورد لانچ", "adm:launch")
     .primary()
     .row()
     .text("📊 آمار این ماه", "adm:stats:month")
     .text("📈 آمار ۳ ماه", "adm:stats:3m")
     .row()
-    .text("📅 ثبت‌نام امروز (دختر/پسر)", "adm:stats:today")
+    .text("📅 ثبت‌نام امروز", "adm:stats:today")
     .row()
-    .text("👥 خلاصه کاربران", "adm:overview")
-    .text("🔄 بروزرسانی", "adm:home")
+    .text("⬅️ بازگشت", "adm:home");
+}
+
+/** زیرمنو: سیستم */
+export function adminCatSysKb() {
+  return new InlineKeyboard()
+    .text("📋 لاگ / تشخیص", "adm:botlog")
+    .text("⏱ آپتایم", "adm:uptime")
     .row()
-    .text("📋 لاگ هنگ / تشخیص", "adm:botlog")
-    .text("♻️ ریستارت ربات", "adm:restart");
+    .text("♻️ ریستارت ربات", "adm:restart")
+    .danger()
+    .row()
+    .text("⬅️ بازگشت", "adm:home");
 }
 
 function formatLaunchDashboard(
@@ -255,6 +310,155 @@ adminHandler.callbackQuery(/^adm:home$/, async (ctx) => {
       reply_markup: adminPanelKeyboard(s.pendingPhotos, s.pendingFaces),
     });
   });
+});
+
+async function showCategory(
+  ctx: Context,
+  title: string,
+  kb: InlineKeyboard,
+): Promise<void> {
+  await ctx.editMessageText(title, { reply_markup: kb }).catch(async () => {
+    await ctx.reply(title, { reply_markup: kb });
+  });
+}
+
+adminHandler.callbackQuery("adm:cat:approve", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  const s = await getRegistrationStats();
+  await showCategory(
+    ctx,
+    `🛡 تأیید و احراز\n\nعکس در انتظار: ${formatNum(s.pendingPhotos)} · احراز در انتظار: ${formatNum(s.pendingFaces)}`,
+    adminCatApproveKb(s.pendingPhotos, s.pendingFaces),
+  );
+});
+
+adminHandler.callbackQuery("adm:cat:coins", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  await showCategory(ctx, "💰 اقتصاد سکه\n\nیک گزینه را انتخاب کن:", adminCatCoinsKb());
+});
+
+adminHandler.callbackQuery("adm:cat:users", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  await showCategory(ctx, "👮 مدیریت کاربر\n\nیک گزینه را انتخاب کن:", adminCatUsersKb());
+});
+
+adminHandler.callbackQuery("adm:cat:stats", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  await showCategory(ctx, "📊 آمار و لانچ\n\nیک گزینه را انتخاب کن:", adminCatStatsKb());
+});
+
+adminHandler.callbackQuery("adm:cat:sys", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  await showCategory(ctx, "⚙️ سیستم\n\nیک گزینه را انتخاب کن:", adminCatSysKb());
+});
+
+const COIN_REASON_FA: Record<string, string> = {
+  quick_match: "⚡ چت سریع",
+  direct_request: "💬 درخواست چت",
+  chat_gift_sent: "🎁 هدیه چت (ارسال)",
+  chat_gift_recv: "🎁 هدیه چت (دریافت)",
+  boost: "💎 اشتراک پرو",
+  thread_gift_sent: "🧵 نخ دادن (ارسال)",
+  thread_gift_recv: "🧵 نخ دادن (دریافت)",
+  like_gift: "❤️ لایک",
+  list_blast: "📣 پیام گروهی",
+  direct_msg: "✉️ پیام دایرکت",
+  daily: "🎁 سکه روزانه",
+  referral: "👥 دعوت دوستان",
+  welcome: "🎉 هدیه ورود",
+  purchase: "🛒 خرید سکه",
+  voucher: "🎟 کد هدیه",
+  admin_gift: "👑 هدیه ادمین",
+  admin_giftall: "👑 هدیه همگانی",
+  face_verify: "🛡 احراز چهره",
+  profile_section: "📊 تکمیل پروفایل",
+  sell_hold: "💵 فروش (رزرو)",
+  sell_refund: "💵 فروش (برگشت)",
+  delete_account: "🗑 حذف حساب",
+  other: "سایر",
+};
+
+adminHandler.callbackQuery("adm:coinusage", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  const rep = await getCoinUsageReport();
+  const lbl = (r: string) => COIN_REASON_FA[r] ?? r;
+  const lines = [
+    "📊 گزارش مصرف سکه (دفترکل)",
+    "",
+    "—— 🔻 خرج‌شده به تفکیک بخش ——",
+    ...(rep.spends.length
+      ? rep.spends.map(
+          (x) => `${lbl(x.reason)}: ${formatNum(Math.abs(x.net))} (${formatNum(x.count)}×)`,
+        )
+      : ["—"]),
+    `جمع خرج: ${formatNum(rep.totalSpent)} سکه`,
+    "",
+    "—— 🔺 دریافت‌شده به تفکیک بخش ——",
+    ...(rep.earns.length
+      ? rep.earns.map(
+          (x) => `${lbl(x.reason)}: ${formatNum(x.net)} (${formatNum(x.count)}×)`,
+        )
+      : ["—"]),
+    `جمع دریافت: ${formatNum(rep.totalEarned)} سکه`,
+  ].join("\n");
+  const kb = new InlineKeyboard()
+    .text("🔄 بروزرسانی", "adm:coinusage")
+    .text("⬅️ بازگشت", "adm:cat:coins");
+  await ctx
+    .editMessageText(lines, { reply_markup: kb })
+    .catch(async () => {
+      await ctx.reply(lines, { reply_markup: kb });
+    });
+});
+
+adminHandler.callbackQuery("adm:topcoins", async (ctx) => {
+  if (!adminOnly(ctx)) {
+    await ctx.answerCallbackQuery({ text: "غیرمجاز" });
+    return;
+  }
+  await ctx.answerCallbackQuery();
+  const top = await getTopCoinUsers(15);
+  const lines = [
+    "🏆 بیشترین موجودی سکه (۱۵ نفر برتر)",
+    "",
+    ...top.map((u, i) => {
+      const name = u.displayName?.trim() || `کاربر ${u.userCode ?? u.id}`;
+      const code = u.userCode ? ` /user_${u.userCode}` : "";
+      return `${formatNum(i + 1)}. ${name} — ${formatNum(u.diamonds)}💰${code}`;
+    }),
+  ].join("\n");
+  const kb = new InlineKeyboard()
+    .text("🔄 بروزرسانی", "adm:topcoins")
+    .text("⬅️ بازگشت", "adm:cat:coins");
+  await ctx
+    .editMessageText(lines, { reply_markup: kb })
+    .catch(async () => {
+      await ctx.reply(lines, { reply_markup: kb });
+    });
 });
 
 adminHandler.callbackQuery(/^adm:launch$/, async (ctx) => {

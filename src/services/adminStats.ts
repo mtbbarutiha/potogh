@@ -487,3 +487,42 @@ export async function checkForceJoinHealth(
   }
 }
 
+
+/** گزارش مصرف/جریان سکه به تفکیک بخش (از دفترکل CoinLedger) */
+export async function getCoinUsageReport() {
+  const rows = await prisma.coinLedger.groupBy({
+    by: ["reason"],
+    _sum: { delta: true },
+    _count: { _all: true },
+  });
+  const items = rows.map((r) => ({
+    reason: r.reason,
+    net: r._sum.delta ?? 0,
+    count: r._count._all,
+  }));
+  const spends = items
+    .filter((x) => x.net < 0)
+    .sort((a, b) => a.net - b.net);
+  const earns = items
+    .filter((x) => x.net > 0)
+    .sort((a, b) => b.net - a.net);
+  const totalSpent = spends.reduce((s, x) => s + Math.abs(x.net), 0);
+  const totalEarned = earns.reduce((s, x) => s + x.net, 0);
+  return { spends, earns, totalSpent, totalEarned };
+}
+
+/** کاربران با بیشترین موجودی سکه */
+export async function getTopCoinUsers(limit = 15) {
+  return prisma.user.findMany({
+    where: { deletedAt: null, telegramId: { lt: 9000000000n } },
+    orderBy: { diamonds: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      displayName: true,
+      userCode: true,
+      diamonds: true,
+      telegramId: true,
+    },
+  });
+}

@@ -743,7 +743,7 @@ export async function sendChatRequest(
   // (چت سریع «quick» جدا از طریق quickPayers هنگام وصل حساب می‌شود.)
   const chargeDirect = source === "direct" && DIRECT_CHAT_REQUEST_COST > 0;
   if (chargeDirect) {
-    const paid = await debitCoins(a.id, DIRECT_CHAT_REQUEST_COST);
+    const paid = await debitCoins(a.id, DIRECT_CHAT_REQUEST_COST, "direct_request");
     if (!paid) return "no_coins";
   }
 
@@ -833,7 +833,7 @@ export async function sendChatRequest(
     });
     // ارسال نشد → هزینه‌ی کسرشده را برگردان
     if (chargeDirect) {
-      await creditCoins(a.id, DIRECT_CHAT_REQUEST_COST).catch(() => undefined);
+      await creditCoins(a.id, DIRECT_CHAT_REQUEST_COST, "direct_request").catch(() => undefined);
     }
     return "busy";
   }
@@ -1225,7 +1225,7 @@ export async function connectUsers(
     // سکه‌ی چت سریع برگردد (چون اتصال برقرار نشد)
     if (quickPayers.length) {
       for (const pid of quickPayers) {
-        await creditCoins(pid, QUICK_MATCH_COST).catch(() => undefined);
+        await creditCoins(pid, QUICK_MATCH_COST, "quick_match").catch(() => undefined);
       }
     }
     const failMsg = (lang: Lang) =>

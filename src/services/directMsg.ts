@@ -663,7 +663,7 @@ export async function sendListBlast(ctx: Context, userId: number, token: string)
 
   // هزینه ثابت ۱۰ سکه برای کل بچ — کسر اتمی
   const { debitCoins } = await import("./coins.js");
-  const paid = await debitCoins(user.id, LIST_BLAST_COST);
+  const paid = await debitCoins(user.id, LIST_BLAST_COST, "list_blast");
   if (!paid) {
     await ctx.reply(
       tr(lang, "سکه کافی نیست.", "Not enough coins."),
@@ -1089,7 +1089,7 @@ export async function sendDirectDraft(ctx: Context, userId: number, draftId: num
   }
 
   const { debitCoins } = await import("./coins.js");
-  const paid = await debitCoins(user.id, DIRECT_MSG_COST);
+  const paid = await debitCoins(user.id, DIRECT_MSG_COST, "direct_msg");
   if (!paid) {
     await ctx.answerCallbackQuery({ text: tr(lang, "سکه کافی نیست", "Not enough coins") });
     return;

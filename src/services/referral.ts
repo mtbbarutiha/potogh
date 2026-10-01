@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { REFERRAL_BONUS } from "../data/packages.js";
 
 /**
@@ -73,6 +74,7 @@ export async function grantReferralBonusIfEligible(
       where: { id: referrerId, deletedAt: null },
       data: { diamonds: { increment: REFERRAL_BONUS } },
     });
+    await recordCoin(referrerId, REFERRAL_BONUS, "referral", tx);
     // اگر معرف پیدا نشد/حذف شده، claim را با throw رول‌بک کن تا flag مصرف نشود
     if (credited.count !== 1) {
       throw new Error("REFERRER_MISSING");

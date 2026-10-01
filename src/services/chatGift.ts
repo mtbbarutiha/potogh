@@ -2,6 +2,7 @@ import { InlineKeyboard } from "grammy";
 import { prisma } from "../db/prisma.js";
 import { formatNum } from "../data/packages.js";
 import { normalizeLang, tr, type Lang } from "../i18n/index.js";
+import { recordCoin } from "./coins.js";
 
 export type ChatGift = {
   code: string;
@@ -75,11 +76,13 @@ export async function sendChatGift(
     if (debited.count !== 1) {
       return { ok: false as const, reason: "no_coins" as const };
     }
+    await recordCoin(senderId, -gift.cost, "chat_gift_sent", tx);
     if (share > 0) {
       await tx.user.updateMany({
         where: { id: recipientId, deletedAt: null },
         data: { diamonds: { increment: share } },
       });
+      await recordCoin(recipientId, share, "chat_gift_recv", tx);
     }
     const sender = await tx.user.findUnique({
       where: { id: senderId },

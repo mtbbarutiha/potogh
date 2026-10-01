@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { getAdminIds } from "../lib/admin.js";
 import {
   COIN_SELL_PRICE_TOMAN,
@@ -201,6 +202,7 @@ export async function submitCoinSell(input: {
       if (debited.count !== 1) {
         throw new Error("BALANCE");
       }
+      await recordCoin(input.userId, -coins, "sell_hold", tx);
       const row = await tx.coinSellRequest.create({
         data: {
           userId: input.userId,
@@ -262,6 +264,7 @@ export async function rejectCoinSell(
       where: { id: row.userId },
       data: { diamonds: { increment: row.coins } },
     });
+    await recordCoin(row.userId, row.coins, "sell_refund", tx);
     return { ok: true as const, refunded: row.coins };
   });
 }

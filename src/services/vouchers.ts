@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 
 const VOUCHER_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -159,6 +160,7 @@ export async function redeemVoucher(
       data: { diamonds: { increment: voucher.coinAmount } },
     });
     if (updated.count !== 1) return { ok: false, reason: "no_user" };
+    await recordCoin(userId, voucher.coinAmount, "voucher", tx);
 
     const user = await tx.user.findUnique({
       where: { id: userId },

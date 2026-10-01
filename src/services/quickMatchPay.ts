@@ -7,7 +7,7 @@ import {
   QUICK_MATCH_REFUND_MS,
 } from "../data/packages.js";
 import { langOf } from "../i18n/index.js";
-import { creditCoins } from "./coins.js";
+import { creditCoins, recordCoin } from "./coins.js";
 
 export { QUICK_MATCH_COST, QUICK_MATCH_REFUND_MS };
 
@@ -44,6 +44,7 @@ export async function debitQuickMatchPayersInTx(
         amount,
       },
     });
+    await recordCoin(payerId, -amount, "quick_match", tx);
   }
   return true;
 }
@@ -123,7 +124,7 @@ export async function settleQuickMatchOnChatEnd(
       });
       if (claimed.count !== 1) continue;
 
-      const credited = await creditCoins(charge.payerId, charge.amount);
+      const credited = await creditCoins(charge.payerId, charge.amount, "quick_match");
       if (!credited) {
         console.error(
           "quickMatch refund credit failed",

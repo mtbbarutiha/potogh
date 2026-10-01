@@ -1,5 +1,6 @@
 import { InlineKeyboard } from "grammy";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { formatNum } from "../data/packages.js";
 import { formatAdminUserLine } from "./account.js";
 
@@ -96,10 +97,12 @@ export async function resolveAdminTarget(raw: string) {
 }
 
 export async function creditUserCoins(targetId: number, amount: number) {
-  return prisma.user.update({
+  const r = await prisma.user.update({
     where: { id: targetId },
     data: { diamonds: { increment: amount } },
   });
+  await recordCoin(targetId, amount, "admin_gift");
+  return r;
 }
 
 export function giveCoinsCancelKeyboard() {

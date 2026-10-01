@@ -1,6 +1,7 @@
 import type { Api } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { formatNum } from "../data/packages.js";
 
 const FAKE_TG_MIN = 9000000000n;

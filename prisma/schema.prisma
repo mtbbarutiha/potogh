@@ -438,3 +438,15 @@ model ChatRating {
   @@unique([raterId, rateeId])
   @@index([rateeId])
 }
+
+model CoinLedger {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  delta     Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([reason, createdAt])
+  @@index([userId])
+  @@index([createdAt])
+}

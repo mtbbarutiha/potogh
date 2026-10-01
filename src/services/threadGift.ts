@@ -1,5 +1,6 @@
 import type { Api } from "grammy";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import {
   formatNum,
   THREAD_GIFT_COST,
@@ -50,10 +51,12 @@ export async function sendThreadGift(
         data: { diamonds: { decrement: THREAD_GIFT_COST } },
       });
       if (debited.count !== 1) return false;
+      await recordCoin(sender.id, -THREAD_GIFT_COST, "thread_gift_sent", tx);
       await tx.user.update({
         where: { id: targetId },
         data: { diamonds: { increment: THREAD_GIFT_RECIPIENT } },
       });
+      await recordCoin(targetId, THREAD_GIFT_RECIPIENT, "thread_gift_recv", tx);
       await tx.interaction.create({
         data: {
           type: "thread",

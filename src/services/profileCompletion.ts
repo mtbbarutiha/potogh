@@ -1,6 +1,7 @@
 import type { Api } from "grammy";
 import type { User } from "@prisma/client";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import { formatNum, PROFILE_SECTION_REWARD } from "../data/packages.js";
 import { parseInterests } from "../data/interests.js";
 import { langOf, t, tr, type Lang } from "../i18n/index.js";
@@ -180,6 +181,7 @@ export async function checkProfileCompletionRewards(
         profileRewardedSections: JSON.stringify(updatedRewarded),
       },
     });
+    await recordCoin(userId, coins, "profile_section", tx);
     return result.count;
   });
   if (updatedCount !== 1) {

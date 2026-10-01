@@ -3,6 +3,7 @@ import type { Context } from "grammy";
 import { findByTelegram, patchUser } from "../db/users.js";
 import { requireRegistered } from "../services/register.js";
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "../services/coins.js";
 import {
   mainKeyboard,
   profileEditKeyboard,
@@ -554,7 +555,12 @@ async function acceptFaceVideo(
   const user = await findByTelegram(from.id);
   if (!user || user.state !== "edit_face") return false;
   if (user.photoStatus !== "approved" || !user.photoFileId) {
-    await ctx.reply("اول عکس پروفایل تأییدشده لازم است.");
+    // جلوگیری از گیرکردن در edit_face: state را آزاد کن و مسیر درست را نشان بده
+    await patchUser(user.id, { state: "idle" });
+    await ctx.reply(
+      "برای احراز چهره اول باید عکس پروفایلت تأیید شده باشد.\nاز «پروفایل» یک عکس بفرست و بعد از تأیید ادمین، دوباره احراز را بزن.",
+      { reply_markup: mainKeyboard() },
+    );
     return true;
   }
 
@@ -691,6 +697,7 @@ profileHandler.callbackQuery(/^adm:face:(ok|no):(\d+)$/, async (ctx) => {
       await ctx.answerCallbackQuery({ text: "قبلاً تأیید شده" });
       return;
     }
+    await recordCoin(user.id, FACE_VERIFY_REWARD, "face_verify");
     const fresh = await prisma.user.findUnique({ where: { id: user.id } });
     await ctx.answerCallbackQuery({ text: "احراز شد +۱۰۰💰" });
     await ctx.api

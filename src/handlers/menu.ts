@@ -227,7 +227,7 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
   }
   const { debitCoins } = await import("../services/coins.js");
   const until = new Date(Date.now() + BOOST_HOURS * 3600_000);
-  const ok = await debitCoins(user.id, BOOST_COST);
+  const ok = await debitCoins(user.id, BOOST_COST, "boost");
   if (!ok) {
     await ctx.reply(
       lang === "en"
