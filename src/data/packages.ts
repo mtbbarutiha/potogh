@@ -159,6 +159,11 @@ export const DAILY_COIN_REWARD = 10;
 export const DIRECT_CHAT_REQUEST_COST = 1;
 export const BOOST_COST = 40;
 export const BOOST_HOURS = 12;
+/** استوری ۲۴ ساعته */
+export const STORY_TTL_HOURS = 24;
+export const STORY_MAX_TEXT = 300;
+/** هزینه‌ی بوست استوری (نمایش در ابتدای صف) */
+export const STORY_BOOST_COST = 15;
 /** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) — تک‌پاداش */
 export const FACE_VERIFY_REWARD = 30;
 /** هزینه پاک کردن دائمی حساب کاربری */

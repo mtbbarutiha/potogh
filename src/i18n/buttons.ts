@@ -6,6 +6,7 @@ export function normalizeLang(raw: string | null | undefined): Lang {
 
 export type BtnKey =
   | "QUICK_CHAT"
+  | "STORY"
   | "NEARBY"
   | "SEARCH"
   | "PROFILE"
@@ -32,6 +33,7 @@ export type BtnKey =
 export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
   fa: {
     QUICK_CHAT: "به یه ناشناس وصلم کن! ⚡",
+    STORY: "استوری ۲۴ ساعته 📸",
     NEARBY: "افراد نزدیک 📍",
     SEARCH: "جستجوی کاربران 🔍",
     PROFILE: "پروفایل 👤",
@@ -56,6 +58,7 @@ export const BUTTONS: Record<Lang, Record<BtnKey, string>> = {
   },
   en: {
     QUICK_CHAT: "Connect me to a stranger! ⚡",
+    STORY: "24h Story 📸",
     NEARBY: "People nearby 📍",
     SEARCH: "Search users 🔍",
     PROFILE: "Profile 👤",

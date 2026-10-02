@@ -156,6 +156,7 @@ async function main() {
   if (filled) logger.info("db.backfill_codes", { count: filled });
 
   const { expireStaleChatRequests } = await import("./services/match.js");
+  const { cleanupExpiredStories } = await import("./services/story.js");
 
   const { initInlineThumbCache } = await import("./services/inlineList.js");
   await initInlineThumbCache();
@@ -182,7 +183,10 @@ async function main() {
   const expireTimer = setInterval(() => {
     if (expireRunning) return;
     expireRunning = true;
-    expireStaleChatRequests(bot.api)
+    Promise.allSettled([
+      expireStaleChatRequests(bot.api),
+      cleanupExpiredStories(),
+    ])
       .catch((err) =>
         logger.error("expire.failed", { err: errMessage(err) }),
       )

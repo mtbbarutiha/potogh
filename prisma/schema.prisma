@@ -450,3 +450,20 @@ model CoinLedger {
   @@index([userId])
   @@index([createdAt])
 }
+
+model Story {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  kind        String    // "photo" | "text"
+  text        String?
+  photoFileId String?
+  status      String    @default("approved") // pending | approved | rejected
+  boosted     Boolean   @default(false)
+  viewCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  reviewedAt  DateTime?
+
+  @@index([status, expiresAt])
+  @@index([userId])
+}
