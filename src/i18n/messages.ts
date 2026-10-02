@@ -16,8 +16,7 @@ import {
   LIST_BLAST_LIMIT,
   MIN_SELL_COINS,
   DIRECT_CHAT_REQUEST_COST,
-  COIN_PRICE_TOMAN,
-  COIN_PRICE_STARS,
+  COIN_BEST_RATE_TOMAN,
 } from "../data/packages.js";
 
 type Vars = Record<string, string | number | null | undefined>;
@@ -249,8 +248,8 @@ export function fullGuide(lang: Lang): string {
       "   Check your balance and buy coin packs.",
       `   🎁 Welcome gift: ${formatNum(WELCOME_DIAMONDS)} coins for new users`,
       "",
-      `   Each coin: ${formatNum(COIN_PRICE_STARS)} Star or ${formatNum(COIN_PRICE_TOMAN)} Toman`,
-      "   👑 VIP — largest pack (4000 coins)",
+      `   Bigger pack = cheaper coins (from ${formatNum(COIN_BEST_RATE_TOMAN)} Toman/coin)`,
+      "   👑 VIP — largest pack (6800 coins)",
       "",
       `💵 ${B.EARN}`,
       `   Sell your coins for cash (minimum ${formatNum(MIN_SELL_COINS)} coins).`,
@@ -340,8 +339,8 @@ export function fullGuide(lang: Lang): string {
     "   موجودیت رو ببین و بسته سکه بخر.",
     `   🎁 هدیه ورود: ${formatNum(WELCOME_DIAMONDS)} سکه برای کاربران جدید`,
     "",
-    `   هر سکه: ${formatNum(COIN_PRICE_STARS)} Star یا ${formatNum(COIN_PRICE_TOMAN)} تومان`,
-    "   👑 VIP — بزرگ‌ترین بسته (۴۰۰۰ سکه)",
+    `   هرچه بسته بزرگ‌تر، هر سکه ارزان‌تر (از ${formatNum(COIN_BEST_RATE_TOMAN)} تومان)`,
+    "   👑 VIP — بزرگ‌ترین بسته (۶۸۰۰ سکه)",
     "",
     `💵 ${B.EARN}`,
     `   سکه‌هایت رو نقد کن (حداقل ${formatNum(MIN_SELL_COINS)} سکه).`,

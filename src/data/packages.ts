@@ -10,53 +10,68 @@ export type DiamondPackage = {
   vip?: boolean;
 };
 
-/** قیمت پایه هر سکه */
-export const COIN_PRICE_TOMAN = 2_000;
+/** نرخ مرجع هر سکه (گران‌ترین پله = مبنای محاسبه‌ی تخفیف) */
+export const COIN_PRICE_TOMAN = 750;
 export const COIN_PRICE_STARS = 1;
+/** بهترین نرخ (بسته‌ی بزرگ) — برای پیام «از X تومان» */
+export const COIN_BEST_RATE_TOMAN = 221;
 
 /**
- * نرخ فروش سکه به ریال (کسب درآمد) — قابل تنظیم ادمین از همین ثابت.
- * خرید: COIN_PRICE_TOMAN | فروش: COIN_SELL_PRICE_TOMAN
+ * نرخ فروش سکه (برداشت کاربر) — باید خیلی کمتر از ارزان‌ترین نرخ خرید باشد
+ * تا سوءاستفاده‌ی خرید-بفروش (آربیتراژ) ممکن نباشد.
  * حداقل موجودی برای ثبت درخواست: MIN_SELL_COINS
  */
-export const COIN_SELL_PRICE_TOMAN = 1_000;
+export const COIN_SELL_PRICE_TOMAN = 150;
 export const MIN_SELL_COINS = 1000;
+
+/** تومانِ هر سکه در یک بسته (برای نمایش نرخ واقعی هر بسته) */
+export function perCoinToman(p: DiamondPackage): number {
+  return Math.round(p.toman / p.diamonds);
+}
 
 function pkg(
   id: string,
   diamonds: number,
+  toman: number,
+  stars: number,
   label: string,
   opts?: { vip?: boolean },
 ): DiamondPackage {
+  const perCoin = toman / diamonds;
+  const discountPct = Math.max(
+    0,
+    Math.round((1 - perCoin / COIN_PRICE_TOMAN) * 100),
+  );
   return {
     id,
     diamonds,
     label,
-    discountPct: 0,
+    discountPct,
     ...(opts?.vip ? { vip: true } : {}),
-    toman: diamonds * COIN_PRICE_TOMAN,
-    stars: diamonds * COIN_PRICE_STARS,
+    toman,
+    stars,
   };
 }
 
-/** پکیج سکه — هر سکه ۲٬۰۰۰ تومان یا ۱ Star */
+/** پکیج سکه — تعرفه‌ی پلکانی (هرچه بسته بزرگ‌تر، هر سکه ارزان‌تر) */
 export const DIAMOND_PACKAGES: DiamondPackage[] = [
-  pkg("d50", 50, "۵۰ سکه"),
-  pkg("d120", 120, "۱۲۰ سکه"),
-  pkg("d300", 300, "۳۰۰ سکه — پرفروش"),
-  pkg("d700", 700, "۷۰۰ سکه"),
-  pkg("d1500", 1500, "۱۵۰۰ سکه"),
-  pkg("d4000", 4000, "VIP", { vip: true }),
+  pkg("d320", 320, 240_000, 120, "۳۲۰ سکه"),
+  pkg("d540", 540, 380_000, 190, "۵۴۰ سکه"),
+  pkg("d1500", 1500, 560_000, 280, "۱۵۰۰ سکه — پرفروش"),
+  pkg("d2800", 2800, 800_000, 400, "۲۸۰۰ سکه"),
+  pkg("d6800", 6800, 1_500_000, 750, "VIP", { vip: true }),
 ];
 
 /** برچسب دکمه — بسته‌های عادی */
 export function packagePickerLabel(p: DiamondPackage): string {
-  return `💰 ${formatNum(p.diamonds)} سکه · ⭐${formatNum(p.stars)} · ${formatNum(p.toman)}ت`;
+  const off = p.discountPct >= 5 ? ` · ${formatNum(p.discountPct)}٪ تخفیف` : "";
+  return `💰 ${formatNum(p.diamonds)} سکه · ${formatNum(p.toman)}ت · ⭐${formatNum(p.stars)}${off}`;
 }
 
 /** دکمه VIP — برجسته و جدا */
 export function vipPickerLabel(p: DiamondPackage): string {
-  return `👑 VIP · ${formatNum(p.diamonds)} سکه · ⭐${formatNum(p.stars)} · ${formatNum(p.toman)}ت`;
+  const off = p.discountPct >= 5 ? ` · ${formatNum(p.discountPct)}٪ تخفیف` : "";
+  return `👑 VIP · ${formatNum(p.diamonds)} سکه · ${formatNum(p.toman)}ت · ⭐${formatNum(p.stars)}${off}`;
 }
 
 export function coinsShopIntroText(
@@ -69,7 +84,7 @@ export function coinsShopIntroText(
       "",
       `Balance: ${formatNum(balance)}`,
       "",
-      `Each coin: ${formatNum(COIN_PRICE_TOMAN)} Toman or ${formatNum(COIN_PRICE_STARS)} Star`,
+      `Bigger pack = cheaper coins (from ${formatNum(COIN_BEST_RATE_TOMAN)} Toman/coin, up to 71% off)`,
       "Pick a package → Stars or card transfer",
     ].join("\n");
   }
@@ -78,7 +93,7 @@ export function coinsShopIntroText(
     "",
     `موجودی: ${formatNum(balance)}`,
     "",
-    `قیمت هر سکه: ${formatNum(COIN_PRICE_TOMAN)} تومان یا ${formatNum(COIN_PRICE_STARS)} Star`,
+    `هرچه بسته بزرگ‌تر، هر سکه ارزان‌تر (از ${formatNum(COIN_BEST_RATE_TOMAN)} تومان — تا ۷۱٪ تخفیف)`,
     "بسته را بزن → Stars یا کارت‌به‌کارت",
   ].join("\n");
 }
@@ -95,8 +110,8 @@ export function packageCheckoutText(
         "👑━━━━━━━━━━━━━━👑",
         "",
         `💎 ${formatNum(pkg.diamonds)} coins`,
-        `⭐ Telegram Stars: ${formatNum(pkg.stars)} (${formatNum(COIN_PRICE_STARS)} per coin)`,
-        `💳 Card transfer: ${formatToman(pkg.toman)} (${formatNum(COIN_PRICE_TOMAN)} Toman per coin)`,
+        `⭐ Telegram Stars: ${formatNum(pkg.stars)}`,
+        `💳 Card transfer: ${formatToman(pkg.toman)} (${formatNum(perCoinToman(pkg))} Toman/coin)`,
         "",
         "Choose payment method:",
       ].join("\n");
@@ -107,8 +122,8 @@ export function packageCheckoutText(
       "👑━━━━━━━━━━━━━━👑",
       "",
       `💎 ${formatNum(pkg.diamonds)} سکه`,
-      `⭐ Telegram Stars: ${formatNum(pkg.stars)} (هر سکه ${formatNum(COIN_PRICE_STARS)} Star)`,
-      `💳 کارت‌به‌کارت: ${formatToman(pkg.toman)} (هر سکه ${formatNum(COIN_PRICE_TOMAN)} تومان)`,
+      `⭐ Telegram Stars: ${formatNum(pkg.stars)}`,
+      `💳 کارت‌به‌کارت: ${formatToman(pkg.toman)} (هر سکه ${formatNum(perCoinToman(pkg))} تومان)`,
       "",
       "روش پرداخت را انتخاب کن:",
     ].join("\n");
