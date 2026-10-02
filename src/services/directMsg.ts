@@ -758,6 +758,8 @@ export async function sendListBlast(ctx: Context, userId: number, token: string)
       where: { id: user.id },
       data: { diamonds: { increment: LIST_BLAST_COST } },
     });
+    const { recordCoin } = await import("./coins.js");
+    await recordCoin(user.id, LIST_BLAST_COST, "list_blast");
     diamondsLeft = refunded.diamonds;
   }
 
@@ -1172,6 +1174,10 @@ export async function sendDirectDraft(ctx: Context, userId: number, draftId: num
       where: { id: user.id },
       data: { diamonds: { increment: DIRECT_MSG_COST } },
     });
+    {
+      const { recordCoin } = await import("./coins.js");
+      await recordCoin(user.id, DIRECT_MSG_COST, "direct_msg");
+    }
     await prisma.directMessage.update({
       where: { id: draft.id },
       data: { status: "draft" },

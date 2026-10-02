@@ -21,7 +21,7 @@ export const COIN_BEST_RATE_TOMAN = 221;
  * تا سوءاستفاده‌ی خرید-بفروش (آربیتراژ) ممکن نباشد.
  * حداقل موجودی برای ثبت درخواست: MIN_SELL_COINS
  */
-export const COIN_SELL_PRICE_TOMAN = 150;
+export const COIN_SELL_PRICE_TOMAN = 200;
 export const MIN_SELL_COINS = 1000;
 
 /** تومانِ هر سکه در یک بسته (برای نمایش نرخ واقعی هر بسته) */
@@ -156,7 +156,7 @@ export function packageCheckoutText(
   ].join("\n");
 }
 
-export const REFERRAL_BONUS = 25;
+export const REFERRAL_BONUS = 50;
 export const WELCOME_DIAMONDS = 15;
 /** @deprecated سکه رایگان روزانه حذف شد — فقط برای سازگاری import باقی مانده */
 export const DAILY_COIN_REWARD = 10;

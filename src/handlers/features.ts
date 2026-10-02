@@ -12,6 +12,7 @@ import {
   giftDiamondsKeyboard,
 } from "../keyboards/main.js";
 import { formatNum, REFERRAL_BONUS, LIKE_GIFT_DIAMONDS, GIFT_AMOUNTS } from "../data/packages.js";
+import { recordCoin } from "../services/coins.js";
 import { langOf } from "../i18n/index.js";
 import {
   nextExploreProfile,
@@ -821,6 +822,8 @@ featuresHandler.callbackQuery(/^exp:likes?:(\d+)$/, async (ctx) => {
           diamonds: { increment: LIKE_GIFT_DIAMONDS },
         },
       });
+      await recordCoin(user.id, -LIKE_GIFT_DIAMONDS, "like_gift", tx);
+      await recordCoin(targetId, LIKE_GIFT_DIAMONDS, "like_gift", tx);
       return true;
     });
     if (!liked) {

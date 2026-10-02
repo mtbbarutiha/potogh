@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { recordCoin } from "./coins.js";
 import type { User } from "@prisma/client";
 import type { Context } from "grammy";
 import { tr, normalizeLang, type Lang } from "../i18n/index.js";
@@ -26,6 +27,7 @@ export async function deleteAccountPermanently(
         if (debited.count !== 1) {
           throw new Error("DELETE_ACCOUNT_NO_COINS");
         }
+        await recordCoin(user.id, -coinCost, "delete_account", tx);
       }
 
       await tx.deletedAccount.create({
