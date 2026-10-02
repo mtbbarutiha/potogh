@@ -26,6 +26,36 @@ function cardDigits(card: string): string {
   return (card || "").replace(/\D/g, "");
 }
 
+/** رسید واریز خوش‌ساخت برای کاربر پس از پرداخت فروش سکه */
+function buildPaidReceipt(row: {
+  id: number;
+  coins: number;
+  amountToman: number;
+  cardNumber: string;
+  reviewedAt?: Date | null;
+}): string {
+  const when = new Date(row.reviewedAt ?? Date.now()).toLocaleString("fa-IR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  return [
+    "✅ <b>واریز انجام شد</b> 🎉",
+    "",
+    `مبلغ <b>${formatToman(row.amountToman)}</b> به کارت شما واریز شد.`,
+    "",
+    "━━━━━━━━━━━━",
+    "🧾 <b>رسید فروش سکه</b>",
+    `🔖 پیگیری: #${row.id}`,
+    `🪙 سکه فروخته‌شده: ${formatNum(row.coins)}`,
+    `💵 مبلغ واریزی: ${formatToman(row.amountToman)}`,
+    `💳 کارت مقصد: <code>${esc(cardDigits(row.cardNumber))}</code>`,
+    `🕗 ${esc(when)}`,
+    "━━━━━━━━━━━━",
+    "",
+    "ممنون که همراه پاتوق هستی 💜",
+  ].join("\n");
+}
+
 function brief(u: {
   id: number;
   displayName: string | null;
@@ -199,16 +229,12 @@ adminCoinSellsHandler.callbackQuery(
           return;
         }
         await ctx.answerCallbackQuery({ text: "پرداخت شد ✅" });
-        // اطلاع به کاربر
+        // رسید واریز برای کاربر
         await ctx.api
           .sendMessage(
             Number(row.user.telegramId),
-            [
-              "✅ درخواست فروش سکه‌ات پرداخت شد.",
-              `شماره: #${row.id}`,
-              `مبلغ: ${formatToman(row.amountToman)}`,
-              `کارت: ${formatCardGrouped(row.cardNumber)}`,
-            ].join("\n"),
+            buildPaidReceipt(row),
+            { parse_mode: "HTML" },
           )
           .catch(() => undefined);
       } else {
