@@ -334,9 +334,13 @@ export async function gateRegistrationJoin(
 
   await patchUser(user.id, { state: "force_join", registered: false });
   const lang = langOf(user);
-  await ctx.reply(forceJoinPrompt(lang, status === "unknown"), {
-    reply_markup: joinKeyboard(lang),
-  });
+  try {
+    await ctx.reply(forceJoinPrompt(lang, status === "unknown"), {
+      reply_markup: joinKeyboard(lang),
+    });
+  } catch {
+    // کاربر ربات را بلاک کرده یا هنوز conversation شروع نکرده (403) — خطای واقعی نیست
+  }
   return false;
 }
 
