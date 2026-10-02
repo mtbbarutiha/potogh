@@ -87,13 +87,15 @@ export const PROFILE_SECTIONS: SectionDef[] = [
     labelFa: "عکس پروفایل",
     labelEn: "Profile photo",
     isComplete: (u) => u.photoStatus === "approved",
-    reward: 5,
+    reward: 15,
   },
   {
     id: "face",
     labelFa: "احراز چهره",
     labelEn: "Face verify",
     isComplete: (u) => u.faceVerified,
+    // پاداش چهره یک‌بار و فقط از مسیر FACE_VERIFY_REWARD داده می‌شود
+    reward: 0,
   },
 ];
 

@@ -21,6 +21,7 @@ import {
 import { langOf, t, welcomeSlogan, fullGuide } from "../i18n/index.js";
 import { gateRegistrationJoin } from "../middleware/forceJoin.js";
 import { checkProfileCompletionRewards } from "./profileCompletion.js";
+import { recordCoin } from "./coins.js";
 
 const PREV_STEP: Record<string, string> = {
   language: "force_join",
@@ -319,6 +320,13 @@ export async function finishRegistration(ctx: Context, userId: number) {
   if (claimed.count !== 1) {
     return;
   }
+
+  // 🎁 هدیه ورود — فقط یک‌بار (claim اتمی بالا تضمینش می‌کند)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { diamonds: { increment: WELCOME_DIAMONDS } },
+  });
+  await recordCoin(userId, WELCOME_DIAMONDS, "welcome");
 
   const { grantReferralBonusIfEligible } = await import("./referral.js");
   await grantReferralBonusIfEligible(userId);

@@ -144,12 +144,12 @@ export const DAILY_COIN_REWARD = 10;
 export const DIRECT_CHAT_REQUEST_COST = 1;
 export const BOOST_COST = 40;
 export const BOOST_HOURS = 12;
-/** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) */
-export const FACE_VERIFY_REWARD = 100;
+/** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) — تک‌پاداش */
+export const FACE_VERIFY_REWARD = 30;
 /** هزینه پاک کردن دائمی حساب کاربری */
 export const DELETE_ACCOUNT_COST = 100;
-/** جایزه تکمیل هر بخش پروفایل (یک‌بار برای هر بخش) */
-export const PROFILE_SECTION_REWARD = 10;
+/** جایزه تکمیل هر بخش پروفایل پایه (یک‌بار برای هر بخش) */
+export const PROFILE_SECTION_REWARD = 5;
 /** هر لایک: ۱ سکه از لایک‌کننده → هدیه به طرف مقابل */
 export const LIKE_GIFT_DIAMONDS = 1;
 /** نخ دادن: ۵ سکه از فرستنده، ۳ سکه به گیرنده (۲ سکه سهم سیستم) */
