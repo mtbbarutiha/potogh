@@ -57,8 +57,7 @@ export function mainKeyboard(lang: Lang | string | null = "fa") {
     // —— بالا: سبز ——
     .text(btn(L, "QUICK_CHAT"), "success")
     .row()
-    .text(btn(L, "STORY"), "success")
-    .row()
+    // استوری غیرفعال شد
     .text(btn(L, "NEARBY"), "success")
     .text(btn(L, "SEARCH"), "success")
     .row()

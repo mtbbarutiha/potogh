@@ -6,7 +6,8 @@ import { commandsHandler } from "./handlers/commands.js";
 import { menuHandler } from "./handlers/menu.js";
 import { featuresHandler } from "./handlers/features.js";
 import { profileHandler } from "./handlers/profile.js";
-import { storyHandler } from "./handlers/story.js";
+// استوری غیرفعال شد — برای فعال‌سازی دوباره، این import و bot.use پایین را از کامنت دربیاور
+// import { storyHandler } from "./handlers/story.js";
 import { adminHandler } from "./handlers/admin.js";
 import { adminVouchersHandler } from "./handlers/adminVouchers.js";
 import { chatHandler } from "./handlers/chat.js";
@@ -401,7 +402,7 @@ export function createBot(token: string) {
   bot.use(commandsHandler);
   bot.use(registerHandler);
   bot.use(profileHandler);
-  bot.use(storyHandler);
+  // استوری غیرفعال شد — bot.use(storyHandler);
   bot.use(featuresHandler);
   bot.use(menuHandler);
   bot.use(chatHandler);
