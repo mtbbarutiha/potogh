@@ -222,35 +222,109 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
             "💎 Pro subscription",
             `Cost: ${formatNum(BOOST_COST)} coins for ${BOOST_HOURS} hours`,
             `Balance: ${formatNum(user.diamonds)} coins`,
-            "Not enough coins — buy from «🪙 Coins».",
+            "Not enough coins.",
           ].join("\n")
         : [
             "💎 اشتراک پرو",
             `هزینه: ${formatNum(BOOST_COST)} سکه برای ${BOOST_HOURS} ساعت`,
             `موجودی: ${formatNum(user.diamonds)} سکه`,
-            "سکه کافی نیست — از «🪙 سکه» بخر.",
+            "سکه کافی نیست.",
           ].join("\n"),
+      {
+        reply_markup: new InlineKeyboard().text(
+          lang === "en" ? "🪙 Buy coins" : "🪙 خرید سکه",
+          "coins:open",
+        ),
+      },
     );
+    return;
+  }
+  // تأیید قبل از کسر
+  await ctx.reply(
+    lang === "en"
+      ? [
+          "💎 Pro subscription",
+          `${BOOST_HOURS}h priority in the queue & lists`,
+          `Cost: ${formatNum(BOOST_COST)} coins`,
+          `Balance: ${formatNum(user.diamonds)} coins`,
+          "",
+          `This will deduct ${formatNum(BOOST_COST)} coins. Confirm?`,
+        ].join("\n")
+      : [
+          "💎 اشتراک پرو",
+          `${BOOST_HOURS} ساعت اولویت در صف و لیست‌ها`,
+          `هزینه: ${formatNum(BOOST_COST)} سکه`,
+          `موجودی: ${formatNum(user.diamonds)} سکه`,
+          "",
+          `این کار ${formatNum(BOOST_COST)} سکه از شما کسر می‌کند. تأیید می‌کنی؟`,
+        ].join("\n"),
+    {
+      reply_markup: new InlineKeyboard()
+        .text(
+          lang === "en"
+            ? `✅ Confirm (${formatNum(BOOST_COST)})`
+            : `✅ تأیید (${formatNum(BOOST_COST)} سکه)`,
+          "boost:confirm",
+        )
+        .text(lang === "en" ? "❌ Cancel" : "❌ لغو", "boost:cancel"),
+    },
+  );
+});
+
+menuHandler.callbackQuery("boost:cancel", async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "لغو شد" });
+  await ctx.editMessageReplyMarkup().catch(() => undefined);
+});
+
+menuHandler.callbackQuery("boost:confirm", async (ctx) => {
+  const user = await findByTelegram(ctx.from.id);
+  if (!user) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+  const lang = langOf(user);
+  const locale = lang === "en" ? "en-US" : "fa-IR";
+  if (user.isPro || (user.boostUntil && user.boostUntil > new Date())) {
+    await ctx.answerCallbackQuery({
+      text: lang === "en" ? "Already active" : "از قبل فعال است",
+      show_alert: true,
+    });
     return;
   }
   const { debitCoins } = await import("../services/coins.js");
-  const until = new Date(Date.now() + BOOST_HOURS * 3600_000);
   const ok = await debitCoins(user.id, BOOST_COST, "boost");
   if (!ok) {
-    await ctx.reply(
-      lang === "en"
-        ? "Not enough coins."
-        : "سکه کافی نیست.",
-    );
+    await ctx.answerCallbackQuery({
+      text: lang === "en" ? "Not enough coins" : "سکه کافی نیست",
+      show_alert: true,
+    });
     return;
   }
+  const until = new Date(Date.now() + BOOST_HOURS * 3600_000);
   await patchUser(user.id, { boostUntil: until });
-  await ctx.reply(
-    t(lang, "boost_on", {
-      until: until.toLocaleString(locale),
-      cost: formatNum(BOOST_COST),
-    }),
-  );
+  await ctx.answerCallbackQuery({
+    text: lang === "en" ? "Activated ✅" : "فعال شد ✅",
+  });
+  const msg = t(lang, "boost_on", {
+    until: until.toLocaleString(locale),
+    cost: formatNum(BOOST_COST),
+  });
+  await ctx.editMessageText(msg).catch(async () => {
+    await ctx.reply(msg);
+  });
+});
+
+menuHandler.callbackQuery("coins:open", async (ctx) => {
+  const user = await findByTelegram(ctx.from.id);
+  if (!user) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+  const lang = langOf(user);
+  await ctx.answerCallbackQuery();
+  await ctx.reply(coinsShopIntroText(lang, user.diamonds), {
+    reply_markup: coinsShopKeyboard(user.lastDailyCoinAt, lang),
+  });
 });
 
 menuHandler.hears(btnAll("STATS"), async (ctx) => {
