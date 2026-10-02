@@ -453,11 +453,12 @@ async function cachedThumbOnly(u: RowUser): Promise<string | null> {
     return cdn;
   }
   const mem = publicThumbCache.get(key);
-  if (mem && Date.now() - mem.at < 6 * 60 * 60_000) {
-    if (mem.url.includes("catbox.moe")) return mem.url;
+  if (mem && Date.now() - mem.at < 6 * 60 * 60_000 && !mem.url.includes("placeholder.com")) {
+    return mem.url;
   }
+  // thumbnail سرور خودمان (sslip) — تلگرام با HTTPS معتبر لودش می‌کند؛ کات‌باکس مرده است
   const disk = await getCachedPublicThumbUrl(key);
-  if (disk?.includes("catbox.moe")) {
+  if (disk) {
     publicThumbCache.set(key, { url: disk, at: Date.now() });
     return disk;
   }
@@ -562,7 +563,7 @@ function resultDescription(u: RowUser): string {
   return `${line1}\n${line2}`;
 }
 
-/** Article — ظاهر لیست کشویی پاتوق (فقط CDN؛ sslip.io تلگرام لود نمی‌کند) */
+/** Article — ظاهر لیست کشویی؛ thumbnail از سرور خودمان (sslip, HTTPS معتبر) */
 function toInlineResult(
   u: RowUser,
   offset: number,
@@ -579,7 +580,6 @@ function toInlineResult(
   };
   if (
     thumbUrl &&
-    !thumbUrl.includes("sslip.io") &&
     !thumbUrl.includes("placeholder.com")
   ) {
     return {
@@ -726,9 +726,11 @@ export async function answerInlineUserList(ctx: Context) {
 
       anyFallback = true;
       scheduleThumbBuild(ctx.api, u);
-      const defKey = genderThumbKey(u.gender);
-      const defCdn = await getCachedCdnThumbUrl(defKey);
-      return toInlineResult(u, offset, defCdn);
+      // عکس پیش‌فرض جنسیت از سرور خودمان (sslip) — کات‌باکس مرده است
+      const defUrl = await ensureGenderDefaultPublicUrl(u.gender).catch(
+        () => null,
+      );
+      return toInlineResult(u, offset, defUrl);
     }),
   );
 
