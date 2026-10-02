@@ -27,6 +27,60 @@ export type CoinReason =
   | "delete_account"
   | "other";
 
+/** برچسب فارسی هر دلیل تراکنش سکه (مرجع مشترک) */
+export const COIN_REASON_FA: Record<string, string> = {
+  quick_match: "⚡ چت سریع",
+  direct_request: "💬 درخواست چت",
+  chat_gift_sent: "🎁 هدیه چت (ارسال)",
+  chat_gift_recv: "🎁 هدیه چت (دریافت)",
+  boost: "💎 اشتراک پرو",
+  thread_gift_sent: "🧵 نخ دادن (ارسال)",
+  thread_gift_recv: "🧵 نخ دادن (دریافت)",
+  like_gift: "❤️ لایک",
+  list_blast: "📣 پیام گروهی",
+  direct_msg: "✉️ پیام دایرکت",
+  daily: "🎁 سکه روزانه",
+  referral: "👥 دعوت دوستان",
+  welcome: "🎉 هدیه ورود",
+  purchase: "🛒 خرید سکه",
+  voucher: "🎟 کد هدیه",
+  admin_gift: "👑 هدیه ادمین",
+  admin_giftall: "👑 هدیه همگانی",
+  face_verify: "🛡 احراز چهره",
+  profile_section: "📊 تکمیل پروفایل",
+  sell_hold: "💵 فروش (رزرو)",
+  sell_refund: "💵 فروش (برگشت)",
+  delete_account: "🗑 حذف حساب",
+  other: "سایر",
+};
+
+export function coinReasonFa(reason: string): string {
+  return COIN_REASON_FA[reason] ?? reason;
+}
+
+/**
+ * منابع کسب سکه یک کاربر — فقط تراکنش‌های مثبت (دریافتی)، به تفکیک دلیل.
+ * برای تشخیص اینکه کاربر سکه‌هایش را از چه راهی به‌دست آورده (ضدتقلب).
+ */
+export async function getUserEarnSources(
+  userId: number,
+): Promise<Array<{ reason: string; total: number; count: number }>> {
+  const grouped = await prisma.coinLedger.groupBy({
+    by: ["reason"],
+    where: { userId, delta: { gt: 0 } },
+    _sum: { delta: true },
+    _count: { _all: true },
+  });
+  return grouped
+    .map((g) => ({
+      reason: g.reason,
+      total: g._sum.delta ?? 0,
+      count: g._count._all,
+    }))
+    .filter((x) => x.total > 0)
+    .sort((a, b) => b.total - a.total);
+}
+
 type Tx = Prisma.TransactionClient;
 
 /** ثبت یک ردیف در دفترکل سکه (بی‌خطر — خطا نمی‌دهد) */

@@ -9,8 +9,22 @@ import {
   rejectCoinSell,
   formatCardGrouped,
 } from "../services/coinSell.js";
+import { getUserEarnSources, coinReasonFa } from "../services/coins.js";
 
 export const adminCoinSellsHandler = new Composer();
+
+/** escape برای parse_mode HTML */
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** فقط ۱۶ رقم کارت — برای کپی تمیز */
+function cardDigits(card: string): string {
+  return (card || "").replace(/\D/g, "");
+}
 
 function brief(u: {
   id: number;
@@ -94,22 +108,41 @@ async function buildDetailText(id: number) {
     dateStyle: "full",
     timeStyle: "short",
   });
+  const digits = cardDigits(r.cardNumber);
+
+  // منابع کسب سکه کاربر — برای تشخیص اینکه سکه از چه راهی آمده
+  const sources = await getUserEarnSources(r.userId);
+  const earnedTotal = sources.reduce((s, x) => s + x.total, 0);
+  const sourceLines =
+    sources.length > 0
+      ? sources
+          .slice(0, 8)
+          .map(
+            (x) =>
+              `• ${esc(coinReasonFa(x.reason))}: ${formatNum(x.total)} سکه (${formatNum(x.count)}×)`,
+          )
+      : ["• بدون سابقه در دفترکل"];
+
   return [
     `💵 فروش سکه #${r.id}`,
-    `وضعیت: ${r.status}`,
-    `زمان: ${when}`,
+    `وضعیت: ${esc(r.status)}`,
+    `زمان: ${esc(when)}`,
     "",
     `سکه: ${formatNum(r.coins)}`,
     `نرخ: ${formatNum(r.rateToman)} ت/سکه`,
     `مبلغ: ${formatToman(r.amountToman)}`,
-    `کارت: ${formatCardGrouped(r.cardNumber)}`,
-    r.adminNote ? `یادداشت: ${r.adminNote}` : null,
+    `کارت: <code>${esc(digits)}</code>`,
+    `<i>${esc(formatCardGrouped(r.cardNumber))}</i>`,
+    r.adminNote ? `یادداشت: ${esc(r.adminNote)}` : null,
     "",
     "—— کاربر ——",
-    brief(r.user),
-    `tg: ${r.user.telegramId}`,
+    esc(brief(r.user)),
+    `tg: <code>${esc(String(r.user.telegramId))}</code>`,
     `موجودی فعلی: ${formatNum(r.user.diamonds)}`,
-    r.user.userCode ? `لینک: /user_${r.user.userCode}` : null,
+    r.user.userCode ? `لینک: /user_${esc(r.user.userCode)}` : null,
+    "",
+    `—— 💰 منبع سکه‌ها (کل کسب: ${formatNum(earnedTotal)}) ——`,
+    ...sourceLines,
   ]
     .filter((x) => x != null)
     .join("\n");
@@ -142,9 +175,11 @@ adminCoinSellsHandler.callbackQuery(/^adm:sell:view:(\d+)$/, async (ctx) => {
   }
   await ctx.answerCallbackQuery();
   const kb = detailKeyboard(id);
-  await ctx.editMessageText(text, { reply_markup: kb }).catch(async () => {
-    await ctx.reply(text, { reply_markup: kb });
-  });
+  await ctx
+    .editMessageText(text, { reply_markup: kb, parse_mode: "HTML" })
+    .catch(async () => {
+      await ctx.reply(text, { reply_markup: kb, parse_mode: "HTML" });
+    });
 });
 
 adminCoinSellsHandler.callbackQuery(

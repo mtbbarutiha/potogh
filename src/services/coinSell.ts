@@ -287,6 +287,9 @@ export async function notifyAdminsNewCoinSell(
 ): Promise<void> {
   const row = await getCoinSellById(requestId);
   if (!row) return;
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const digits = normalizeCardNumber(row.cardNumber);
   const text = [
     "💵 درخواست فروش سکه جدید",
     "",
@@ -294,15 +297,18 @@ export async function notifyAdminsNewCoinSell(
     `سکه: ${formatNum(row.coins)}`,
     `مبلغ: ${formatToman(row.amountToman)}`,
     `نرخ: ${formatNum(row.rateToman)} ت/سکه`,
-    `کارت: ${formatCardGrouped(row.cardNumber)}`,
+    `کارت: <code>${esc(digits)}</code>`,
+    `<i>${esc(formatCardGrouped(row.cardNumber))}</i>`,
     "",
-    `کاربر: ${briefUser(row.user)}`,
-    `tg: ${row.user.telegramId}`,
+    `کاربر: ${esc(briefUser(row.user))}`,
+    `tg: <code>${esc(String(row.user.telegramId))}</code>`,
     "",
     "از پنل ادمین → فروش سکه ببین.",
   ].join("\n");
 
   for (const adminId of getAdminIds()) {
-    await api.sendMessage(adminId, text).catch(() => undefined);
+    await api
+      .sendMessage(adminId, text, { parse_mode: "HTML" })
+      .catch(() => undefined);
   }
 }

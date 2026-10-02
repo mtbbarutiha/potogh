@@ -14,6 +14,7 @@ import {
   getManagerReport,
 } from "../services/adminStats.js";
 import { formatNum, formatToman } from "../data/packages.js";
+import { COIN_REASON_FA } from "../services/coins.js";
 import { formatAdminUserLine } from "../services/account.js";
 import { sendPendingFaceToAdmin } from "../services/profile.js";
 import {
@@ -360,32 +361,6 @@ adminHandler.callbackQuery("adm:cat:sys", async (ctx) => {
   await ctx.answerCallbackQuery();
   await showCategory(ctx, "⚙️ سیستم\n\nیک گزینه را انتخاب کن:", adminCatSysKb());
 });
-
-const COIN_REASON_FA: Record<string, string> = {
-  quick_match: "⚡ چت سریع",
-  direct_request: "💬 درخواست چت",
-  chat_gift_sent: "🎁 هدیه چت (ارسال)",
-  chat_gift_recv: "🎁 هدیه چت (دریافت)",
-  boost: "💎 اشتراک پرو",
-  thread_gift_sent: "🧵 نخ دادن (ارسال)",
-  thread_gift_recv: "🧵 نخ دادن (دریافت)",
-  like_gift: "❤️ لایک",
-  list_blast: "📣 پیام گروهی",
-  direct_msg: "✉️ پیام دایرکت",
-  daily: "🎁 سکه روزانه",
-  referral: "👥 دعوت دوستان",
-  welcome: "🎉 هدیه ورود",
-  purchase: "🛒 خرید سکه",
-  voucher: "🎟 کد هدیه",
-  admin_gift: "👑 هدیه ادمین",
-  admin_giftall: "👑 هدیه همگانی",
-  face_verify: "🛡 احراز چهره",
-  profile_section: "📊 تکمیل پروفایل",
-  sell_hold: "💵 فروش (رزرو)",
-  sell_refund: "💵 فروش (برگشت)",
-  delete_account: "🗑 حذف حساب",
-  other: "سایر",
-};
 
 adminHandler.callbackQuery("adm:coinusage", async (ctx) => {
   if (!adminOnly(ctx)) {
