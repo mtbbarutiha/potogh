@@ -676,11 +676,16 @@ featuresHandler.callbackQuery(/^adv:on:(all|\d+)$/, async (ctx) => {
     if (!paid) {
       await ctx.reply(
         lang === "en"
-          ? `🔍 Advanced search costs ${ADV_SEARCH_COST} coins (free for 👑 VIP). Not enough coins — top up from the Coins menu.`
-          : `🔍 جستجوی پیشرفته ${ADV_SEARCH_COST} سکه است (برای 👑 VIP رایگان).\nسکه‌ات کافی نیست — از منوی «سکه» شارژ کن.`,
+          ? `🔍 Advanced search costs ${formatNum(ADV_SEARCH_COST)} coin (free for 👑 VIP). Not enough coins — top up from the Coins menu.`
+          : `🔍 جستجوی پیشرفته ${formatNum(ADV_SEARCH_COST)} سکه است (برای 👑 VIP رایگان).\nسکه‌ات کافی نیست — از منوی «سکه» شارژ کن.`,
       );
       return;
     }
+    await ctx.reply(
+      lang === "en"
+        ? `🔍 ${formatNum(ADV_SEARCH_COST)} coin deducted for advanced search. (Free for 👑 VIP)`
+        : `🔍 ${formatNum(ADV_SEARCH_COST)} سکه بابت جستجوی پیشرفته کسر شد. (برای 👑 VIP رایگان)`,
+    );
   }
   await sendSearchList(ctx, user.id, opts);
 });

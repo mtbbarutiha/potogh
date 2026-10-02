@@ -170,7 +170,7 @@ export const STORY_MAX_TEXT = 300;
 /** هزینه‌ی بوست استوری (نمایش در ابتدای صف) */
 export const STORY_BOOST_COST = 15;
 /** هزینه‌ی هر جستجوی پیشرفته برای کاربر عادی (VIP رایگان) */
-export const ADV_SEARCH_COST = 10;
+export const ADV_SEARCH_COST = 1;
 /** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) — تک‌پاداش */
 export const FACE_VERIFY_REWARD = 30;
 /** هزینه پاک کردن دائمی حساب کاربری */
