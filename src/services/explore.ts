@@ -366,7 +366,7 @@ function orderFor(opts: ExploreOpts): Prisma.UserOrderByWithRelationInput[] {
   if (opts.newUsers) {
     return [{ createdAt: "desc" }];
   }
-  return [{ boostUntil: "desc" }, { lastActiveAt: "desc" }];
+  return [{ isPro: "desc" }, { boostUntil: "desc" }, { lastActiveAt: "desc" }];
 }
 
 function isOnlineNow(lastActiveAt: Date): boolean {
@@ -405,12 +405,14 @@ function listCaption(
     latitude: number | null;
     longitude: number | null;
     faceVerified: boolean;
+    isPro?: boolean;
   },
   me: { latitude: number | null; longitude: number | null },
 ): string {
   const code = u.userCode ?? "????";
   const online = isOnlineNow(u.lastActiveAt) ? "🟢 " : "";
   const badge = faceBadgeEmoji(faceBadgeKind(u, false));
+  const vip = u.isPro ? "👑 " : "";
   const name = u.displayName ?? "بدون‌نام";
   const age = u.age ?? "—";
   const place = [u.city, u.province ? `(${u.province})` : null]
@@ -427,7 +429,7 @@ function listCaption(
     dist = ` (🏁 ${formatDistance(km)})`;
   }
   return [
-    `${online}${name} ${age} ${badge}`,
+    `${vip}${online}${name} ${age} ${badge}`,
     `/user_${code}`,
     `${place || "—"}${dist} (❤️ ${formatNum(u.likesCount)})`,
     onlineStatus(u),
@@ -670,7 +672,7 @@ export async function showProfileByUserCode(
     `❤️ ${formatNum(candidate.likesCount)} لایک`,
     "",
     `آیدی: /user_${candidate.userCode}`,
-    `${online}👤 ${candidate.displayName ?? "بدون نام"} (${candidate.age ?? "—"}) ${badge}`,
+    `${candidate.isPro ? "👑 " : ""}${online}👤 ${candidate.displayName ?? "بدون نام"} (${candidate.age ?? "—"}) ${badge}`,
     `┃ ${genderLabel(candidate.gender)}`,
     loc ? `┃ 📍 ${loc}` : null,
     candidate.bio ? `┃ ${candidate.bio}` : null,

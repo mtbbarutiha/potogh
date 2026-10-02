@@ -1362,6 +1362,53 @@ adminHandler.callbackQuery("adm:unban", async (ctx) => {
   });
 });
 
+// —— 👑 گرنت/ریموو VIP دستی توسط ادمین ——
+async function setVipCmd(ctx: Context, grant: boolean) {
+  if (!adminOnly(ctx)) {
+    await ctx.reply("دسترسی ادمین نداری.");
+    return;
+  }
+  const arg = (typeof ctx.match === "string" ? ctx.match : "").trim();
+  if (!arg) {
+    await ctx.reply(
+      `کد یا آیدی کاربر را بده:\n/${grant ? "vip" : "unvip"} <userCode یا id>`,
+    );
+    return;
+  }
+  const idNum = Number(arg);
+  const target = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { userCode: arg },
+        ...(Number.isFinite(idNum) ? [{ id: idNum }] : []),
+      ],
+    },
+  });
+  if (!target) {
+    await ctx.reply("کاربر پیدا نشد.");
+    return;
+  }
+  await prisma.user.update({
+    where: { id: target.id },
+    data: { isPro: grant },
+  });
+  const who = target.displayName?.trim() || target.userCode || String(target.id);
+  await ctx.reply(
+    grant ? `👑 VIP داده شد به ${who}` : `VIP برداشته شد از ${who}`,
+  );
+  await ctx.api
+    .sendMessage(
+      Number(target.telegramId),
+      grant
+        ? "👑 تبریک! حساب تو VIP شد:\n• نشان VIP روی پروفایل\n• بالاترین اولویت در صف چت سریع\n• جستجوی پیشرفته‌ی رایگان"
+        : "حساب VIP تو غیرفعال شد.",
+    )
+    .catch(() => undefined);
+}
+
+adminHandler.command("vip", (ctx) => setVipCmd(ctx, true));
+adminHandler.command("unvip", (ctx) => setVipCmd(ctx, false));
+
 async function cancelModerationFlow(
   ctx: {
     from?: { id: number };

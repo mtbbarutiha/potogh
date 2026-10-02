@@ -627,6 +627,7 @@ function quickMatchScore(
     lastActiveAt: Date;
     boostUntil: Date | null;
     faceVerified: boolean;
+    isPro?: boolean;
   },
   genderPref: QuickMatchGender,
 ): number {
@@ -638,6 +639,7 @@ function quickMatchScore(
   else if (mins <= 60 * 24) score += 3_000;
   else score += Math.max(0, 1000 - mins);
 
+  if (u.isPro) score += 2_000; // 👑 VIP — بالاترین اولویت صف (ماندگار)
   if (u.boostUntil && u.boostUntil.getTime() > Date.now()) score += 800;
   if (u.faceVerified) score += 150;
 

@@ -668,6 +668,20 @@ featuresHandler.callbackQuery(/^adv:on:(all|\d+)$/, async (ctx) => {
     )
     .catch(() => undefined);
   clearAdvDraft(user.id);
+  // 🔍 جستجوی پیشرفته: برای غیرVIP پولی، برای VIP رایگان
+  if (!user.isPro) {
+    const { ADV_SEARCH_COST } = await import("../data/packages.js");
+    const { debitCoins } = await import("../services/coins.js");
+    const paid = await debitCoins(user.id, ADV_SEARCH_COST, "adv_search");
+    if (!paid) {
+      await ctx.reply(
+        lang === "en"
+          ? `🔍 Advanced search costs ${ADV_SEARCH_COST} coins (free for 👑 VIP). Not enough coins — top up from the Coins menu.`
+          : `🔍 جستجوی پیشرفته ${ADV_SEARCH_COST} سکه است (برای 👑 VIP رایگان).\nسکه‌ات کافی نیست — از منوی «سکه» شارژ کن.`,
+      );
+      return;
+    }
+  }
   await sendSearchList(ctx, user.id, opts);
 });
 

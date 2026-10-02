@@ -113,9 +113,15 @@ async function creditPaidOrder(
       return tx.diamondOrder.findUnique({ where: { id: orderId } });
     }
 
+    // 👑 اگر پکیج VIP بود → عضویت VIP دائمی
+    const isVipPkg = DIAMOND_PACKAGES.find((p) => p.id === order.packageId)?.vip === true;
     await tx.user.update({
       where: { id: order.userId },
-      data: { diamonds: { increment: order.diamonds }, state: "idle" },
+      data: {
+        diamonds: { increment: order.diamonds },
+        state: "idle",
+        ...(isVipPkg ? { isPro: true } : {}),
+      },
     });
     await recordCoin(order.userId, order.diamonds, "purchase", tx);
     return tx.diamondOrder.findUnique({ where: { id: orderId } });

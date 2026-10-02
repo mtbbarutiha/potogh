@@ -199,6 +199,14 @@ menuHandler.hears(btnAll("BOOST"), async (ctx) => {
   if (await blockIfChatting(ctx, user)) return;
   const lang = langOf(user);
   const locale = lang === "en" ? "en-US" : "fa-IR";
+  if (user.isPro) {
+    await ctx.reply(
+      lang === "en"
+        ? "👑 You are VIP (permanent): VIP badge, top queue priority, and free advanced search."
+        : "👑 تو VIP هستی (دائمی): نشان VIP، بالاترین اولویت صف، و جستجوی پیشرفته‌ی رایگان.",
+    );
+    return;
+  }
   if (user.boostUntil && user.boostUntil > new Date()) {
     await ctx.reply(
       lang === "en"

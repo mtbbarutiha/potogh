@@ -125,6 +125,11 @@ export function packageCheckoutText(
       `⭐ Telegram Stars: ${formatNum(pkg.stars)}`,
       `💳 کارت‌به‌کارت: ${formatToman(pkg.toman)} (هر سکه ${formatNum(perCoinToman(pkg))} تومان)`,
       "",
+      "🎁 با این بسته VIP دائمی می‌شوی:",
+      "• 👑 نشان VIP روی پروفایل و لیست‌ها",
+      "• ⚡ بالاترین اولویت در صف چت سریع",
+      "• 🔍 جستجوی پیشرفته رایگان (برای بقیه سکه‌ای)",
+      "",
       "روش پرداخت را انتخاب کن:",
     ].join("\n");
   }
@@ -164,6 +169,8 @@ export const STORY_TTL_HOURS = 24;
 export const STORY_MAX_TEXT = 300;
 /** هزینه‌ی بوست استوری (نمایش در ابتدای صف) */
 export const STORY_BOOST_COST = 15;
+/** هزینه‌ی هر جستجوی پیشرفته برای کاربر عادی (VIP رایگان) */
+export const ADV_SEARCH_COST = 10;
 /** جایزه تأیید احراز چهره (ویدیو مطابق عکس پروفایل) — تک‌پاداش */
 export const FACE_VERIFY_REWARD = 30;
 /** هزینه پاک کردن دائمی حساب کاربری */

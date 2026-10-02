@@ -22,6 +22,7 @@ export type CoinReason =
   | "admin_giftall"
   | "face_verify"
   | "profile_section"
+  | "adv_search"
   | "sell_hold"
   | "sell_refund"
   | "delete_account"
@@ -48,6 +49,7 @@ export const COIN_REASON_FA: Record<string, string> = {
   admin_giftall: "👑 هدیه همگانی",
   face_verify: "🛡 احراز چهره",
   profile_section: "📊 تکمیل پروفایل",
+  adv_search: "🔍 جستجوی پیشرفته",
   sell_hold: "💵 فروش (رزرو)",
   sell_refund: "💵 فروش (برگشت)",
   delete_account: "🗑 حذف حساب",

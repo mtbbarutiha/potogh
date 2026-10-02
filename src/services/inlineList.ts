@@ -207,6 +207,7 @@ async function loadSearchRows(
   }
 
   let orderBy: Prisma.UserOrderByWithRelationInput[] = [
+    { isPro: "desc" },
     { boostUntil: "desc" },
     { lastActiveAt: "desc" },
   ];
