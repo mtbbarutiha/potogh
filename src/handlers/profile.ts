@@ -25,6 +25,7 @@ import {
 import {
   profileCompletePanelText,
   checkProfileCompletionRewards,
+  parseRewardedSections,
 } from "../services/profileCompletion.js";
 import { langOf, tr } from "../i18n/index.js";
 import { isAdmin } from "../lib/admin.js";
@@ -516,10 +517,14 @@ profileHandler.on("message:photo", async (ctx, next) => {
   if (!best) return next();
 
   if (user.state === "edit_photo") {
+    // تغییر عکس → خروج از حالت احراز چهره (احراز قبلی برای عکس قبلی بوده)
+    const wasVerified = user.faceVerified || user.faceStatus === "approved";
     await patchUser(user.id, {
       photoPendingFileId: best.file_id,
       photoStatus: "pending",
       state: "idle",
+      faceVerified: false,
+      faceStatus: "none",
     });
     await notifyAdminsPhoto(ctx.api, user, best.file_id);
     await ctx.reply(
@@ -527,7 +532,9 @@ profileHandler.on("message:photo", async (ctx, next) => {
         "📷 عکس دریافت شد.",
         "وضعیت: ⏳ در انتظار تأیید ادمین",
         "",
-        "تا قبل از تأیید، در اکسپلور با عکس پیش‌فرض دیده می‌شوی.",
+        wasVerified
+          ? "⚠️ چون عکست عوض شد، احراز چهره‌ات لغو شد. بعد از تأیید عکس می‌تونی دوباره احراز کنی (این بار بدون جایزه)."
+          : "تا قبل از تأیید، در اکسپلور با عکس پیش‌فرض دیده می‌شوی.",
       ].join("\n"),
       { reply_markup: mainKeyboard() },
     );
@@ -683,6 +690,10 @@ profileHandler.callbackQuery(/^adm:face:(ok|no):(\d+)$/, async (ctx) => {
   }
 
   if (ok) {
+    // جایزه فقط یک‌بار در کل عمر حساب — اگر قبلاً برای چهره پاداش گرفته، دیگر نه
+    const firstReward = !parseRewardedSections(
+      user.profileRewardedSections,
+    ).includes("face");
     const updated = await prisma.user.updateMany({
       where: { id: userId, faceStatus: { not: "approved" } },
       data: {
@@ -690,24 +701,34 @@ profileHandler.callbackQuery(/^adm:face:(ok|no):(\d+)$/, async (ctx) => {
         faceStatus: "approved",
         facePendingFileId: null,
         facePendingKind: null,
-        diamonds: { increment: FACE_VERIFY_REWARD },
+        ...(firstReward ? { diamonds: { increment: FACE_VERIFY_REWARD } } : {}),
       },
     });
     if (updated.count !== 1) {
       await ctx.answerCallbackQuery({ text: "قبلاً تأیید شده" });
       return;
     }
-    await recordCoin(user.id, FACE_VERIFY_REWARD, "face_verify");
+    if (firstReward) {
+      await recordCoin(user.id, FACE_VERIFY_REWARD, "face_verify");
+    }
     const fresh = await prisma.user.findUnique({ where: { id: user.id } });
-    await ctx.answerCallbackQuery({ text: "احراز شد +۱۰۰💰" });
+    await ctx.answerCallbackQuery({
+      text: firstReward ? `احراز شد +${formatNum(FACE_VERIFY_REWARD)}💰` : "احراز شد ✅",
+    });
     await ctx.api
       .sendMessage(
         Number(user.telegramId),
-        [
-          "✅ احراز چهره‌ات تأیید شد!",
-          `🎁 جایزه: ${formatNum(FACE_VERIFY_REWARD)} سکه به حسابت اضافه شد.`,
-          `موجودی: ${formatNum(fresh?.diamonds ?? 0)} 💰`,
-        ].join("\n"),
+        firstReward
+          ? [
+              "✅ احراز چهره‌ات تأیید شد!",
+              `🎁 جایزه: ${formatNum(FACE_VERIFY_REWARD)} سکه به حسابت اضافه شد.`,
+              `موجودی: ${formatNum(fresh?.diamonds ?? 0)} 💰`,
+            ].join("\n")
+          : [
+              "✅ احراز چهره‌ات دوباره تأیید شد!",
+              "ℹ️ جایزه فقط یک‌بار داده می‌شود و قبلاً دریافتش کرده‌ای.",
+              `موجودی: ${formatNum(fresh?.diamonds ?? 0)} 💰`,
+            ].join("\n"),
       )
       .catch(() => undefined);
     await checkProfileCompletionRewards(user.id, {
