@@ -22,7 +22,7 @@ export const COIN_BEST_RATE_TOMAN = 221;
  * حداقل موجودی برای ثبت درخواست: MIN_SELL_COINS
  */
 export const COIN_SELL_PRICE_TOMAN = 200;
-export const MIN_SELL_COINS = 5000;
+export const MIN_SELL_COINS = 3000;
 
 /** تومانِ هر سکه در یک بسته (برای نمایش نرخ واقعی هر بسته) */
 export function perCoinToman(p: DiamondPackage): number {
