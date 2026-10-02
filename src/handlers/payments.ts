@@ -37,7 +37,8 @@ import {
 import { redeemVoucher } from "../services/vouchers.js";
 import { checkUserRate } from "../middleware/rateLimit.js";
 import { langOf, tr, btnAll } from "../i18n/index.js";
-import { isAdmin } from "../lib/admin.js";
+import { isAdmin, getAdminIds } from "../lib/admin.js";
+import { logger } from "../lib/logger.js";
 
 export const paymentsHandler = new Composer();
 
@@ -525,6 +526,12 @@ paymentsHandler.on("pre_checkout_query", async (ctx) => {
     ctx.preCheckoutQuery.currency,
   );
   if (!ok) {
+    logger.warn("stars.precheckout_reject", {
+      userId: user.id,
+      payload: ctx.preCheckoutQuery.invoice_payload,
+      amount: ctx.preCheckoutQuery.total_amount,
+      currency: ctx.preCheckoutQuery.currency,
+    });
     await ctx.answerPreCheckoutQuery(false, {
       error_message: tr(
         langOf(user),
@@ -534,6 +541,11 @@ paymentsHandler.on("pre_checkout_query", async (ctx) => {
     });
     return;
   }
+  logger.info("stars.precheckout_ok", {
+    userId: user.id,
+    payload: ctx.preCheckoutQuery.invoice_payload,
+    amount: ctx.preCheckoutQuery.total_amount,
+  });
   await ctx.answerPreCheckoutQuery(true);
 });
 
@@ -545,7 +557,21 @@ paymentsHandler.on("message:successful_payment", async (ctx) => {
 
   const sp = ctx.message.successful_payment;
   const orderId = Number(sp.invoice_payload);
-  if (!Number.isFinite(orderId)) return;
+  logger.info("stars.payment_received", {
+    userId: user.id,
+    orderId,
+    amount: sp.total_amount,
+    currency: sp.currency,
+    chargeId: sp.telegram_payment_charge_id,
+  });
+  if (!Number.isFinite(orderId)) {
+    logger.error("stars.bad_payload", {
+      userId: user.id,
+      payload: sp.invoice_payload,
+      chargeId: sp.telegram_payment_charge_id,
+    });
+    return;
+  }
 
   const order = await fulfillStarsOrder(
     orderId,
@@ -554,7 +580,43 @@ paymentsHandler.on("message:successful_payment", async (ctx) => {
     sp.total_amount,
     sp.currency,
   );
-  if (!order || order.status !== "paid") return;
+  if (!order || order.status !== "paid") {
+    // پرداخت انجام شده ولی سکه اضافه نشد — نباید بی‌صدا گم شود
+    logger.error("stars.fulfill_failed", {
+      userId: user.id,
+      orderId,
+      amount: sp.total_amount,
+      currency: sp.currency,
+      chargeId: sp.telegram_payment_charge_id,
+      orderStatus: order?.status ?? "null",
+    });
+    await ctx
+      .reply(
+        tr(
+          langOf(user),
+          `⚠️ پرداخت Stars دریافت شد ولی ثبت نشد. نگران نباش — به ادمین اطلاع داده شد و سکه‌ات دستی اضافه می‌شود.\nکد پیگیری: ${sp.telegram_payment_charge_id}`,
+          `⚠️ Stars payment received but not applied. Don't worry — admins were notified and your coins will be added manually.\nRef: ${sp.telegram_payment_charge_id}`,
+        ),
+      )
+      .catch(() => undefined);
+    for (const adminId of getAdminIds()) {
+      await ctx.api
+        .sendMessage(
+          adminId,
+          [
+            "🚨 پرداخت Stars ثبت نشد!",
+            `کاربر: #${user.id}${user.userCode ? ` /user_${user.userCode}` : ""} (tg ${from.id})`,
+            `سفارش: #${orderId} · مبلغ: ${sp.total_amount} ${sp.currency}`,
+            `کد پیگیری: ${sp.telegram_payment_charge_id}`,
+            `وضعیت سفارش: ${order?.status ?? "پیدا نشد"}`,
+            "→ در صورت صحت، سکه را دستی اضافه کن (پنل سکه).",
+          ].join("\n"),
+        )
+        .catch(() => undefined);
+    }
+    return;
+  }
+  logger.info("stars.fulfilled", { userId: user.id, orderId, diamonds: order.diamonds });
 
   const fresh = await findByTelegram(from.id);
   const lang = langOf(user);
